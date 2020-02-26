@@ -239,16 +239,16 @@ Ext.define("custom-grid-with-deep-export", {
                 handler: this._export,
                 scope: this,
                 childModels: ['hierarchicalrequirement']
-            }, {
+            }, /* {
                 text: 'Export User Stories and Tasks...',
                 handler: this._export,
                 scope: this,
                 childModels: ['hierarchicalrequirement', 'task']
-            }, {
-                text: 'Export User Stories and Child Items...',
+            }, */ {
+                text: 'Export User Stories and Defects...',  //  Child Items
                 handler: this._export,
                 scope: this,
-                childModels: ['hierarchicalrequirement', 'task', 'defect', 'testcase']
+                childModels: ['hierarchicalrequirement', 'defect'] // , 'task', 'testcase'    removing tasks, test cases
             }];
         }
         else if (Ext.String.startsWith(currentModel,"portfolioitem")) {
@@ -271,16 +271,16 @@ Ext.define("custom-grid-with-deep-export", {
                 handler: this._export,
                 scope: this,
                 childModels: childModels.concat(['hierarchicalrequirement'])
-            }, {
+            },/* {
                 text: 'Export Portfolio Items, User Stories and Tasks...',
                 handler: this._export,
                 scope: this,
                 childModels: childModels.concat(['hierarchicalrequirement', 'task'])
-            }, {
-                text: 'Export Portfolio Items and Child Items...',
+            }, */ {
+                text: 'Export Portfolio Items, Stories and Defects...',   // Child Item
                 handler: this._export,
                 scope: this,
-                childModels: childModels.concat(['hierarchicalrequirement', 'task', 'defect', 'testcase'])
+                childModels: childModels.concat(['hierarchicalrequirement', 'defect']) //  , 'task', 'testcase'
             }];
         }
         else if (currentModel == 'defect') {
@@ -293,10 +293,10 @@ Ext.define("custom-grid-with-deep-export", {
                 text: 'Export Defects and Child Items...',
                 handler: this._export,
                 scope: this,
-                childModels: ['defect', 'task', 'testcase']
+                childModels: ['defect']  //  , 'task', 'testcase'
             }];
         }
-        else if (currentModel == 'testcase') {
+  /*      else if (currentModel == 'testcase') {
             result = [{
                 text: 'Export Test Cases...',
                 handler: this._export,
@@ -308,7 +308,7 @@ Ext.define("custom-grid-with-deep-export", {
                 scope: this,
                 childModels: ['defect', 'task', 'testcase']
             }];
-        }
+        }  */
         else {
             result = [{
                 text: 'Export to CSV...',
