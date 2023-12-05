@@ -1,5 +1,5 @@
 {
-  "name": "custom-grid-with-deep-export",
+  "name": "Milestone Test App",
   "version": "1.3.10",
   "scripts": {
     "debug": "grunt debug",

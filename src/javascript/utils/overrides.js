@@ -13,7 +13,8 @@ Ext.override(Rally.ui.gridboard.plugin.GridBoardFieldPicker, {
         'Successors',
         'TaskIndex',
         'Workspace',
-        'VersionId'
+        'VersionId',
+        'Project'
     ]
 });
 

@@ -14,7 +14,8 @@ Ext.define("custom-grid-with-deep-export", {
             align: 'middle',
             defaultMargins: '0 10 10 0',
         }
-    }, {
+    },
+    {
         id: 'grid-area',
         xtype: 'container',
         flex: 1,
@@ -23,10 +24,10 @@ Ext.define("custom-grid-with-deep-export", {
     }],
     config: {
         defaultSettings: {
-            columnNames: ['FormattedID', 'Name', 'ScheduleState'],
-            query: '',
+            columnNames: ['FormattedID', 'Name', 'State'],
+            query: '(((State = "Idea Prioritization") OR (State = "Problem Discovery") OR (State = "Solution Discovery")))',
             showControls: true,
-            type: 'HierarchicalRequirement',
+            type: 'PortfolioItem/Epic',
             pageSize: 50,
             enableUrlSharing: false
         }
@@ -41,7 +42,7 @@ Ext.define("custom-grid-with-deep-export", {
     readOnlyGridTypes: ['build', 'change', 'changeset'],
     statePrefix: 'customlist',
     allowExpansionStateToBeSaved: false,
-    enableAddNew: true,
+    enableAddNew: false,
     onTimeboxScopeChange: function(newTimeboxScope) {
         this.callParent(arguments);
         this._buildStore();
@@ -89,12 +90,13 @@ Ext.define("custom-grid-with-deep-export", {
             gridboard.setHeight(gridArea.getHeight())
         }
     },
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
     _buildStore: function() {
 
         this.modelNames = [this.getSetting('type')];
         this.logger.log('_buildStore', this.modelNames);
-        var fetch = ['FormattedID', 'Name'];
+        var fetch = ['FormattedID', 'Name','Project'];
         var dataContext = this.getContext().getDataContext();
         if (this.searchAllProjects()) {
             dataContext.project = null;
@@ -111,6 +113,7 @@ Ext.define("custom-grid-with-deep-export", {
             scope: this
         });
     },
+////////////////////////////////////////////////////////////////////////////////////////////////////    
     _addGridboard: function(store) {
         var gridArea = this.down('#grid-area')
         gridArea.removeAll();
@@ -154,11 +157,13 @@ Ext.define("custom-grid-with-deep-export", {
                         modelNames: this.modelNames,
                         inlineFilterPanelConfig: {
                             quickFilterPanelConfig: {
-                                portfolioItemTypes: this.portfolioItemTypes,
-                                modelName: currentModelName,
                                 whiteListFields: [
-                                    'Tags',
-                                    'Milestones'
+                                   'Tags',
+                                   'Milestones'
+                                ],
+                                defaultFields: [
+                                    'Milestones',
+                                    'Project'
                                 ]
                             }
                         }
@@ -189,7 +194,7 @@ Ext.define("custom-grid-with-deep-export", {
                 }
             ],
             cardBoardConfig: {
-                attribute: 'ScheduleState'
+                attribute: 'State'
             },
             gridConfig: {
                 store: store,
@@ -199,22 +204,27 @@ Ext.define("custom-grid-with-deep-export", {
                 },
                 columnCfgs: [
                     'Name',
+                    'State',
+                    'Milestones',
+                    'PlannedStartDate',
+                    'PlannedEndDate',
+                    'Parent',
+                    'c_PriorityCategorization',
+                    'Project'
+                    /*
                     {
-                        dataIndex: 'PlanEstimate',
+                        dataIndex: 'State',
                         summaryType: 'sum'
                     },
                     {
-                        dataIndex: 'TaskRemainingTotal',
+                        dataIndex: 'Milestones',
                         summaryType: 'sum'
                     },
                     {
-                        dataIndex: 'ToDo',
-                        summaryType: 'sum'
-                    },
-                    {
-                        dataIndex: 'TaskEstimateTotal',
+                        dataIndex: 'Owner',
                         summaryType: 'sum'
                     }
+                    */
                 ],
                 features: [summaryRowFeature]
             }
