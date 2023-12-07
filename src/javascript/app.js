@@ -117,7 +117,9 @@ Ext.define("custom-grid-with-deep-export", {
     _beforeLoadStore: function(store, operation, eOpts) {
         var _loadProjectsByMilestone =  function(milestone){
             var artifacts = milestone.Artifacts;
-            var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + "&fetch=Project";
+            var stateQuery = '(((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) ';
+            var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
+            console.log(urlForArtifacts);
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
