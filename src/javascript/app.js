@@ -119,7 +119,6 @@ Ext.define("custom-grid-with-deep-export", {
             var artifacts = milestone.Artifacts;
             var stateQuery = '(((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) ';
             var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
-            console.log(urlForArtifacts);
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
@@ -188,12 +187,9 @@ Ext.define("custom-grid-with-deep-export", {
         if (operation.filters.length>1)
         {
             var filtersCollection = _buildFiltersCollection(operation.filters[1], []);
-            console.log(filtersCollection);
-
             var queryFilters = "";
 
             for (var index = 0; index < filtersCollection.length; index++) {
-                //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
                 const filter = filtersCollection[index];
                 var query = "";
                 if (filter.property == "Milestones")
@@ -214,12 +210,15 @@ Ext.define("custom-grid-with-deep-export", {
                     queryFilters += " AND ";
                 }
             }
-
-            if (queryFilters != undefined && queryFilters != ""){                
+            var pageSize = Ext.clone(store.lastOptions.params.pagesize);
+            var startIndex = store.lastOptions.params.start;
+            if (queryFilters != undefined && queryFilters != ""){
                 var composedQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND ' + queryFilters +')';
                 Ext.apply(operation, {
                     params: {
-                        query:composedQuery
+                        query:composedQuery,
+                        pagesize: pageSize,
+                        start: startIndex
                     }
                });
             }
