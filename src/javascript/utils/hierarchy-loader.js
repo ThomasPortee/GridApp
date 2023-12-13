@@ -229,6 +229,120 @@ Ext.define('Rally.technicalservices.HierarchyLoader', {
 
         return this.throttle(promises, this.maxParallelCalls, this);
     },
+    _beforeLoadStore: function(store, operation, eOpts) {
+        var _loadProjectsByMilestone =  function(milestone){
+            var artifacts = milestone.Artifacts;
+            var stateQuery = '(((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) ';
+            var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
+            var response = Ext.Ajax.request({
+                async: false,
+                url: urlForArtifacts,
+                method: "GET",
+            });
+            if (response.status == 200){
+                var responseTextObj = Ext.JSON.decode(response.responseText);
+                var responseProjects = responseTextObj.QueryResult.Results;
+                var queryForMilestone = "";
+                for (var index = 0; index < responseProjects.length; index++) {
+                    //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
+                    const projectUUID = responseProjects[index].Project._refObjectUUID;
+                    if (index == 0)
+                    {
+                        queryForMilestone = '(Project = "/project/'+projectUUID+'")';
+                    }else{
+                        queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'"))';
+                    }                   
+                    
+                    if (index < responseProjects.length -1){
+                        queryForMilestone += " OR ";
+                    }
+                }
+                return queryForMilestone;
+                
+            }else{
+                return ""
+            }
+        };
+
+        var _generateQueryForMilestones = function(urlSurfixForMilestone){
+            var response = Ext.Ajax.request({
+                async: false,
+                url: 'https://rally1.rallydev.com/slm/webservice/v2.0/' + urlSurfixForMilestone,
+                method: "GET",
+            });
+            
+            if (response.status == 200){
+                var responseTextObj = Ext.JSON.decode(response.responseText);
+                return _loadProjectsByMilestone(responseTextObj.Milestone);
+            }
+            return "";
+        }
+
+        var _buildFiltersCollection = function(filterObj, collection) {
+    
+            if (filterObj.operator === 'AND') {
+                collection.push ({
+                    property: filterObj.value.property,
+                    operator: filterObj.value.operator,
+                    value: filterObj.value.value
+                });
+                return _buildFiltersCollection(filterObj.property, collection);
+            }else{
+                collection.push ({
+                    property: filterObj.property,
+                    operator: filterObj.operator,
+                    value: filterObj.value
+                });
+                return collection;
+            }
+        }
+        if (operation.filters.length>1)
+        {
+            var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
+            var queryFilters = "";
+
+            for (var index = 0; index < filtersCollection.length; index++) {
+                const filter = filtersCollection[index];
+                var query = "";
+                if (filter.property == "Milestones"){
+                    if (filter.operator.indexOf('?')== 0){
+                        query = '(' + filter.property + ' ' + filter.operator.substring(1)+ ' "' + filter.value + '")';
+                    }
+                    else
+                    {query = _generateQueryForMilestones(filter.value);}
+                }
+                else
+                    query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
+
+                if (query == "") continue;
+
+                if (index == 0)
+                {
+                    queryFilters = query
+                }else{
+                    queryFilters = '('+ queryFilters + query + ')';
+                }
+                
+                if (index < filtersCollection.length -1){
+                    queryFilters += " AND ";
+                }
+            }
+            console.log(operation.filters);
+            // var pageSize = Ext.clone(store.lastOptions.params.pagesize);
+            // var startIndex = store.lastOptions.params.start;
+            if (queryFilters != undefined && queryFilters != ""){
+                var composedQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND ' + queryFilters +')';
+                Ext.apply(operation, {
+                    params: {
+                        query:composedQuery,
+                        // pagesize: pageSize,
+                        // start: startIndex
+                    }
+               });
+            }
+        }
+        return;
+    },
     fetchWsapiRecords: function(config) {
         var deferred = Ext.create('Deft.Deferred');
 
@@ -236,7 +350,9 @@ Ext.define('Rally.technicalservices.HierarchyLoader', {
         config.limit = "Infinity";
         config.allowPostGet = true;
 
-        Ext.create('Rally.data.wsapi.Store', config).load({
+        var store = Ext.create('Rally.data.wsapi.Store', config);
+        store.on('beforeload', this._beforeLoadStore);
+        store.load({
             callback: function(records, operation) {
                 if (operation.wasSuccessful()) {
                     deferred.resolve(records);

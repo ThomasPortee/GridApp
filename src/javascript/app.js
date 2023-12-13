@@ -47,7 +47,75 @@ Ext.define("custom-grid-with-deep-export", {
         this.callParent(arguments);
         this._buildStore();
     },
-    launch: function() {
+    launch: function() {        
+        Rally.ui.inlinefilter.AdvancedFilterRow.prototype._createOperatorField =  function() {
+            this.operatorField = Ext.widget(Ext.merge({
+                xtype: 'rallyoperatorfieldcombobox',
+                itemId: 'operatorField',
+                cls: 'operator-field',
+                width: 80,
+                autoExpand: this.autoExpand,
+                labelAlign: 'top',
+                fieldLabel: 'OPERATOR',
+                labelSeparator: '',
+                matchFieldWidth: true,
+                disabled: !(this._hasPropertySelected()),
+                property: this._hasPropertySelected() ? this.propertyField.getValue() : undefined,
+                value: this.operator,
+                model: this.model,
+                customOperatorField: "Milestones",
+                context: this.context,
+                listeners: {
+                    select: this._onOperatorSelect,
+                    scope: this
+                }
+            }, this.operatorFieldConfig));
+        };
+        Rally.ui.inlinefilter.OperatorFieldComboBox.prototype._getAllowedQueryOperatorStore=  function() {
+            var storeConfig = {
+                fields: ['name', 'displayName', 'OperatorName'],
+                filters:[
+                    {   property: 'OperatorName',
+                        operator: '!=',
+                        value: 'containsall'
+                    },
+                    {   property: 'OperatorName',
+                        operator: '!=',
+                        value: 'containsany'
+                    }
+                ],
+                listeners: {
+                    load: function(store, records) {
+                        var customizedOperator = this.model.getField(this.property).name == "Milestones" &&
+                         this.customOperatorField == "Milestones";
+                        
+                        _.each(records, function (record) {
+                            var operatorName = record.get('OperatorName');
+                            record.set('name', customizedOperator? '?' + operatorName : operatorName);
+                            record.set('displayName', store.shouldReplaceOperatorName ? operatorName.replace('contains', '=') : operatorName);
+                            record.commit(false);
+                        }, this);
+
+                        store.add(this.additionalOperators);
+                        store.commitChanges();
+                    },
+                    scope: this
+                }
+            };
+
+            if (this.property) {
+                var field = this.model.getField(this.property),
+                    store = field.getAllowedQueryOperatorStore();
+
+                if (store) {
+                    storeConfig.autoLoad = false;
+                    storeConfig.proxy = store.proxy.clone();
+                    console.log(field, this.customOperatorField);
+                    storeConfig.shouldReplaceOperatorName = field.isCollection();
+                }
+            }
+            return Ext.create('Ext.data.Store', storeConfig);
+        };
         this.ancestorFilterPlugin = Ext.create('Utils.AncestorPiAppFilter', {
             ptype: 'UtilsAncestorPiAppFilter',
             pluginId: 'ancestorFilterPlugin',
@@ -181,8 +249,6 @@ Ext.define("custom-grid-with-deep-export", {
                 return collection;
             }
         }
-        
-
 
         if (operation.filters.length>1)
         {
@@ -191,9 +257,15 @@ Ext.define("custom-grid-with-deep-export", {
 
             for (var index = 0; index < filtersCollection.length; index++) {
                 const filter = filtersCollection[index];
+                
                 var query = "";
-                if (filter.property == "Milestones")
-                    query = _generateQueryForMilestones(filter.value);
+                if (filter.property == "Milestones"){
+                    if (filter.operator.indexOf('?')== 0){
+                        query = '(' + filter.property + ' ' + filter.operator.substring(1)+ ' "' + filter.value + '")';
+                    }
+                    else
+                    {query = _generateQueryForMilestones(filter.value);}
+                }
                 else
                     query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
 
@@ -250,6 +322,40 @@ Ext.define("custom-grid-with-deep-export", {
             dataContext.project = null;
         }
         var summaryRowFeature = Ext.create('Rally.ui.grid.feature.SummaryRow');
+        
+        Ext.override(Rally.ui.inlinefilter.InlineFilterPanel, {
+            minHeight: 46,
+            padding: '8px 0 0 0',
+            bodyPadding: '7px 5px 5px 5px',
+            collapseDirection: 'top',
+            collapsible: true,
+            animCollapse: false,
+    
+            config: {
+                inline: true,
+                collapsed: true,
+                anchorTargetCmp: undefined,
+                model: undefined,
+                context: undefined,
+                quickFilterPanelConfig: {
+                    initialFilters: [],
+                    addQuickFilterConfig:{whiteListFields:["Milestones", "Tags"]
+        }
+                },
+       advancedFilterPanelConfig: {
+                    advancedFilterRowsConfig: {
+                        propertyFieldConfig: {
+                             whiteListFields: ["Milestones", "Tags"]
+                        }
+                     },
+                    matchTypeConfig: {
+                        value: 'AND'
+                    }
+                }
+            },
+        }
+        )    
+
         this.gridboard = gridArea.add({
             xtype: 'rallygridboard',
             context: context,
@@ -269,16 +375,30 @@ Ext.define("custom-grid-with-deep-export", {
                         stateId: this.getModelScopedStateId(currentModelName, 'filters'),
                         modelNames: this.modelNames,
                         inlineFilterPanelConfig: {
-                            quickFilterPanelConfig: {
-                                whiteListFields: [
-                                   'Tags',
-                                   'Milestones'
-                                ],
-                                defaultFields: [
-                                    'Milestones',
-                                    'Project'
-                                ]
+                            // quickFilterPanelConfig: {
+                            //     whiteListFields: [
+                            //        'Tags',
+                            //        'Milestones'
+                            //     ],
+                            //     defaultFields: [
+                            //         'Milestones',
+                            //         'Project'
+                            //     ]
+                            // },
+                            advancedFilterPanelConfig: {
+                                matchTypeConfig: {
+                                    value: 'AND'
+                                },                
+                                advancedFilterRowsConfig: {
+                                    propertyFieldConfig: {
+                                        blackListFields: [
+                                            'Tags',
+                                            'Milestones'
+                                        ],
+                                    }
+                                }
                             }
+                            
                         }
                     }
                 },
@@ -389,22 +509,22 @@ Ext.define("custom-grid-with-deep-export", {
                 handler: this._export,
                 scope: this,
                 childModels: childModels
-            }, {
+            },/* {
                 text: 'Export Portfolio Items and User Stories...',
                 handler: this._export,
                 scope: this,
                 childModels: childModels.concat(['hierarchicalrequirement'])
-            },/* {
+            }, {
                 text: 'Export Portfolio Items, User Stories and Tasks...',
                 handler: this._export,
                 scope: this,
                 childModels: childModels.concat(['hierarchicalrequirement', 'task'])
-            }, */ {
+            }, {
                 text: 'Export Portfolio Items, Stories and Defects...',   // Child Item
                 handler: this._export,
                 scope: this,
                 childModels: childModels.concat(['hierarchicalrequirement', 'defect']) //  , 'task', 'testcase'
-            }];
+            }*/];
         }
         else if (currentModel == 'defect') {
             result = [{
@@ -541,6 +661,7 @@ Ext.define("custom-grid-with-deep-export", {
         if (this.searchAllProjects()) {
             dataContext.project = null;
         }
+        
         var hierarchyLoader = Ext.create('Rally.technicalservices.HierarchyLoader', {
             model: modelName,
             fetch: fetch,
