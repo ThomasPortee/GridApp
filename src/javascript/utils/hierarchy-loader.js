@@ -304,13 +304,8 @@ Ext.define('Rally.technicalservices.HierarchyLoader', {
             for (var index = 0; index < filtersCollection.length; index++) {
                 const filter = filtersCollection[index];
                 var query = "";
-                if (filter.property == "Milestones"){
-                    if (filter.operator.indexOf('?')== 0){
-                        query = '(' + filter.property + ' ' + filter.operator.substring(1)+ ' "' + filter.value + '")';
-                    }
-                    else
-                    {query = _generateQueryForMilestones(filter.value);}
-                }
+                if (filter.property == "Milestones")
+                    query = _generateQueryForMilestones(filter.value);
                 else
                     query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
 
