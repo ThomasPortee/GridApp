@@ -47,7 +47,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
     },
 
     getTypesFilter: function() {
-        console.log('getTypesFilter');
         var types = this.getTypes(),
             filterIndex = _.findIndex(this.fields, {name: 'ModelType'}) + 1;
 
@@ -171,7 +170,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         return operator;
     },
-    _createCustomField: function(filterIndex, field, initialValues, addtitionalConfig) {
+    _createPortfolioItemTypeField: function(filterIndex, field, initialValues, addtitionalConfig, cboState) {
         var fieldName = field.name || field,
             modelField = this.model.getField(fieldName),
             fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
@@ -238,6 +237,105 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
         }
 
+        
+        Ext.merge(fieldConfig, {
+            listeners: {
+                change : function(me, newValue, oldValue, eOpts){
+                    var portfolioItemTypeFilter = undefined;
+                    this._applyFilters();
+                    if (newValue != null){
+                        portfolioItemTypeFilter = Ext.create('Rally.data.wsapi.Filter', {
+                            property: 'Typedef.Name',
+                            operation: '=',
+                            value: newValue
+                        });
+                        cboState.getStore().clearFilter(true);
+                        cboState.getStore().filter([portfolioItemTypeFilter]);
+                        cboState.getStore().load();
+                    }else{
+                        cboState.setValue(null);
+                        cboState.getStore().removeAll();
+                        
+                    }
+                    
+                },
+                scope: this
+            }
+        });
+
+        return Ext.widget(fieldConfig);
+    },
+
+    _createStateField: function(filterIndex, field, initialValues, addtitionalConfig) {
+        
+        var fieldName = field.name || field,
+            modelField = this.model.getField(fieldName),
+            fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
+            initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
+
+        if (modelField && modelField.isDate() && initialValue) {
+            initialValue = Rally.util.DateTime.fromIsoString(initialValue);
+        }
+
+        initialValue = Rally.ui.inlinefilter.FilterFieldFactory.getInitialValueForLegacyFilter(fieldConfig, initialValue);
+        // fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfigForLegacyFilter(fieldConfig, initialValue);
+        fieldConfig = {};
+
+        Ext.applyIf(fieldConfig, {
+            // allowClear: true
+        });
+
+        var stateStore = Ext.create('Rally.data.wsapi.Store', {
+            model: "State",
+            sorters: [
+                {
+                    property: 'OrderIndex',
+                    direction: 'ASC'
+                }
+            ],
+       });
+
+        Ext.merge(fieldConfig, {
+            xtype: 'rallycombobox',
+            store: stateStore,
+            name: 'State',
+            displayField: 'Name',
+            valueField: '_ref',
+            autoExpand: this.autoExpand,
+            // clearText: '-- Clear Filter --',
+            allowNoEntry: true,
+            emptyText: 'Filter by PortfolioItem Type',
+            labelAlign: 'right',
+            labelWidth: 150,
+            width: 250,
+            labelSeparator: '',
+            enableKeyEvents: true,
+            hideLabel: false,
+            margin: 0,
+            cls: this.isCustomMatchType() ? 'indexed-field' : '',
+            beforeLabelTextTpl: [
+                '<span class="filter-index">{[this.getFilterIndex()]}</span>',
+                {
+                    filterIndex: filterIndex,
+                    displayIndex: this.isCustomMatchType(),
+                    getFilterIndex: function() {
+                        return this.displayIndex ? Ext.String.format('({0}) ', this.filterIndex) : '';
+                    }
+                }
+            ],
+            context: this.context,
+            operator: this._getOperatorForModelField(modelField),
+        });
+        Ext.merge(fieldConfig, addtitionalConfig);
+
+        if (_.isPlainObject(field)) {
+            Ext.apply(fieldConfig, field);
+        }
+
+        if (filterIndex === 1) {
+            fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
+        }
+
         if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
             Ext.merge(fieldConfig, {
                 autoSelect: false,
@@ -257,6 +355,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         return Ext.widget(fieldConfig);
     },
+
 
 
     _createField: function(filterIndex, field, initialValues, addtitionalConfig) {
@@ -335,9 +434,8 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                 }
             });
         }
-        
-
         return Ext.widget(fieldConfig);
+        
     },
 
     focusFirstField: function() {
@@ -427,10 +525,27 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             labelWidth: 100,
             fieldLabel: 'PortfolioItem Type',
         }
-
-        var cboArtifact = this._createCustomField(0, 'PortfolioItemType', null, artifactFilterConfig);
-        var cboMileStones = this._createField(1, 'Milestones', null, mileStoneFilterConfig);
-        var cboState = this._createField(2, 'State', null, stateFilterConfig);
+        var stateStore = Ext.create('Rally.data.wsapi.Store', {
+            model: "State",
+            filters: [
+                {
+                    property: 'Typedef.Name',
+                    value: 'Feature'
+                }
+            ],
+            sorters: [
+                {
+                    property: 'OrderIndex',
+                    direction: 'ASC'
+                }
+            ]
+       });
+       
+        var cboState = this._createStateField(1, 'State', null, stateFilterConfig);
+        var cboArtifact = this._createPortfolioItemTypeField(0, 'PortfolioItemType', null, artifactFilterConfig, cboState);
+        
+        var cboMileStones = this._createField(2, 'Milestones', null, mileStoneFilterConfig);
+        
     
         this.addQuickFilterButton = Ext.widget(
             {
@@ -502,7 +617,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                     },
                     {
                         xtype: 'container',
-                        padding: '20 30',
+                        padding: '20 50',
                         columnWidth: 1,
                         html : 'Test description. This section will serve as an area to input the App description and working scope. This area will be updated once details have been confirmed. <br/><br/>&nbsp; - &nbsp; Test Bullet <br/>&nbsp; - &nbsp; Test Bullet '
                     }
