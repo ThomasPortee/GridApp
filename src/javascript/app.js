@@ -47,75 +47,7 @@ Ext.define("custom-grid-with-deep-export", {
         this.callParent(arguments);
         this._buildStore();
     },
-    launch: function() {        
-        Rally.ui.inlinefilter.AdvancedFilterRow.prototype._createOperatorField =  function() {
-            this.operatorField = Ext.widget(Ext.merge({
-                xtype: 'rallyoperatorfieldcombobox',
-                itemId: 'operatorField',
-                cls: 'operator-field',
-                width: 80,
-                autoExpand: this.autoExpand,
-                labelAlign: 'top',
-                fieldLabel: 'OPERATOR',
-                labelSeparator: '',
-                matchFieldWidth: true,
-                disabled: !(this._hasPropertySelected()),
-                property: this._hasPropertySelected() ? this.propertyField.getValue() : undefined,
-                value: this.operator,
-                model: this.model,
-                customOperatorField: "Milestones",
-                context: this.context,
-                listeners: {
-                    select: this._onOperatorSelect,
-                    scope: this
-                }
-            }, this.operatorFieldConfig));
-        };
-        Rally.ui.inlinefilter.OperatorFieldComboBox.prototype._getAllowedQueryOperatorStore=  function() {
-            var storeConfig = {
-                fields: ['name', 'displayName', 'OperatorName'],
-                filters:[
-                    {   property: 'OperatorName',
-                        operator: '!=',
-                        value: 'containsall'
-                    },
-                    {   property: 'OperatorName',
-                        operator: '!=',
-                        value: 'containsany'
-                    }
-                ],
-                listeners: {
-                    load: function(store, records) {
-                        var customizedOperator = this.model.getField(this.property).name == "Milestones" &&
-                         this.customOperatorField == "Milestones";
-                        
-                        _.each(records, function (record) {
-                            var operatorName = record.get('OperatorName');
-                            record.set('name', customizedOperator? '?' + operatorName : operatorName);
-                            record.set('displayName', store.shouldReplaceOperatorName ? operatorName.replace('contains', '=') : operatorName);
-                            record.commit(false);
-                        }, this);
-
-                        store.add(this.additionalOperators);
-                        store.commitChanges();
-                    },
-                    scope: this
-                }
-            };
-
-            if (this.property) {
-                var field = this.model.getField(this.property),
-                    store = field.getAllowedQueryOperatorStore();
-
-                if (store) {
-                    storeConfig.autoLoad = false;
-                    storeConfig.proxy = store.proxy.clone();
-                    console.log(field, this.customOperatorField);
-                    storeConfig.shouldReplaceOperatorName = field.isCollection();
-                }
-            }
-            return Ext.create('Ext.data.Store', storeConfig);
-        };
+    launch: function() {
         this.ancestorFilterPlugin = Ext.create('Utils.AncestorPiAppFilter', {
             ptype: 'UtilsAncestorPiAppFilter',
             pluginId: 'ancestorFilterPlugin',
@@ -151,7 +83,8 @@ Ext.define("custom-grid-with-deep-export", {
 
     // Usual monkey business to size gridboards
     onResize: function() {
-        this.callParent(arguments);
+        console.log('onResize');
+        this.callParent(arguments);        
         var gridArea = this.down('#grid-area');
         var gridboard = this.down('rallygridboard');
         if (gridArea && gridboard) {
@@ -185,7 +118,7 @@ Ext.define("custom-grid-with-deep-export", {
     _beforeLoadStore: function(store, operation, eOpts) {
         var _loadProjectsByMilestone =  function(milestone){
             var artifacts = milestone.Artifacts;
-            var stateQuery = '(((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) ';
+            var stateQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND (FormattedID contains "E%"))';
             var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
             var response = Ext.Ajax.request({
                 async: false,
@@ -211,13 +144,13 @@ Ext.define("custom-grid-with-deep-export", {
                     }
                 }
                 return queryForMilestone;
-                
             }else{
                 return ""
             }
         };
 
         var _generateQueryForMilestones = function(urlSurfixForMilestone){
+            //console.log('https://rally1.rallydev.com/slm/webservice/v2.0/' + urlSurfixForMilestone);
             var response = Ext.Ajax.request({
                 async: false,
                 url: 'https://rally1.rallydev.com/slm/webservice/v2.0/' + urlSurfixForMilestone,
@@ -252,6 +185,7 @@ Ext.define("custom-grid-with-deep-export", {
 
         if (operation.filters.length>1)
         {
+            console.log(operation.filters)
             var filtersCollection = _buildFiltersCollection(operation.filters[1], []);
             var queryFilters = "";
 
@@ -265,10 +199,18 @@ Ext.define("custom-grid-with-deep-export", {
                     }
                     else
                     {query = _generateQueryForMilestones(filter.value);}
+                    if (query == ''){
+                        query = '( State = "" )';
+                    }
                 }
-                else
-                    query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
-
+                else{
+                    if (filter.operator == 'OR' || filter.operator == 'AND'){
+                        query = '(' + filter.property + ' ' + filter.operator+ ' ' + filter.value + ' )';                        
+                    }
+                        
+                    else
+                        query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
+                }
                 if (query == "") continue;
 
                 if (index == 0)
@@ -282,10 +224,11 @@ Ext.define("custom-grid-with-deep-export", {
                     queryFilters += " AND ";
                 }
             }
+            console.log('queryFilters', queryFilters);
             var pageSize = Ext.clone(store.lastOptions.params.pagesize);
             var startIndex = store.lastOptions.params.start;
             if (queryFilters != undefined && queryFilters != ""){
-                var composedQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND ' + queryFilters +')';
+                var composedQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND ' + queryFilters +')';                
                 Ext.apply(operation, {
                     params: {
                         query:composedQuery,
@@ -354,52 +297,75 @@ Ext.define("custom-grid-with-deep-export", {
                 }
             },
         }
-        )    
-
+        );
         this.gridboard = gridArea.add({
             xtype: 'rallygridboard',
             context: context,
             modelNames: this.modelNames,
             toggleState: 'grid',
-            height: gridArea.getHeight(),
+            height: gridArea.getHeight()-80,
+            originHeight: undefined,
+            resizeHelp: function(me, filterPaneHeight){
+                if (filterPaneHeight > 0){
+
+                }
+                else{}
+                // // console.log(Ext.dom.Query.select( '.inline-filter-panel' ));
+                // if (me.originHeight == undefined)
+                //     me.originHeight = me.getHeight() - filterPaneHeight;
+                // console.log(filterPaneHeight, me.originHeight)
+                // if (filterPaneHeight == 0){
+                //     me.setHeight(me.originHeight + 200);
+                // }else{
+                //     me.setHeight(me.originHeight - filterPaneHeight - 200);
+                // }
+            },
             listeners: {
                 scope: this,
-                viewchange: this.viewChange
+                viewchange: this.viewChange,                
             },
             plugins: [
                 // 'rallygridboardaddnew',
+                // {
+                //     ptype: 'rallygridboardinlinefiltercontrol',
+                //     inlineFilterButtonConfig: {
+                //         stateful: true,
+                //         stateId: this.getModelScopedStateId(currentModelName, 'filters'),
+                //         modelNames: this.modelNames,
+                //         inlineFilterPanelConfig: {
+                //             // quickFilterPanelConfig: {
+                //             //     whiteListFields: [
+                //             //        'Tags',
+                //             //        'Milestones'
+                //             //     ],
+                //             //     defaultFields: [
+                //             //         'Milestones',
+                //             //         'Project'
+                //             //     ]
+                //             // },
+                //             advancedFilterPanelConfig: {
+                //                 matchTypeConfig: {
+                //                     value: 'AND'
+                //                 },                
+                //                 advancedFilterRowsConfig: {
+                //                     propertyFieldConfig: {
+                //                         blackListFields: [
+                //                             'Tags',
+                //                             'Milestones'
+                //                         ],
+                //                     }
+                //                 }
+                //             }
+                            
+                //         }
+                //     }
+                // },
                 {
-                    ptype: 'rallygridboardinlinefiltercontrol',
+                    ptype: 'rallygridboardcustomfiltercontrol',
                     inlineFilterButtonConfig: {
                         stateful: true,
-                        stateId: this.getModelScopedStateId(currentModelName, 'filters'),
+                        stateId: this.getModelScopedStateId(currentModelName, 'customfilters'),
                         modelNames: this.modelNames,
-                        inlineFilterPanelConfig: {
-                            // quickFilterPanelConfig: {
-                            //     whiteListFields: [
-                            //        'Tags',
-                            //        'Milestones'
-                            //     ],
-                            //     defaultFields: [
-                            //         'Milestones',
-                            //         'Project'
-                            //     ]
-                            // },
-                            advancedFilterPanelConfig: {
-                                matchTypeConfig: {
-                                    value: 'AND'
-                                },                
-                                advancedFilterRowsConfig: {
-                                    propertyFieldConfig: {
-                                        blackListFields: [
-                                            'Tags',
-                                            'Milestones'
-                                        ],
-                                    }
-                                }
-                            }
-                            
-                        }
                     }
                 },
                 {
@@ -467,6 +433,7 @@ Ext.define("custom-grid-with-deep-export", {
     viewChange: function() {
         this._buildStore();
     },
+    
 
     getModelScopedStateId: function(modelName, id) {
         return this.getContext().getScopedStateId(modelName + '-' + id);
@@ -688,6 +655,7 @@ Ext.define("custom-grid-with-deep-export", {
     },
 
     setHeight: function(height) {
+        console.log('setHeight(height)');
         this.callParent(arguments);
         if (this.gridboard) {
             this.gridboard.setHeight(height);
