@@ -244,90 +244,96 @@ Rally.ui.inlinefilter.OperatorFieldComboBox.prototype._getAllowedQueryOperatorSt
     return Ext.create('Ext.data.Store', storeConfig);
 };
 
-Rally.ui.inlinefilter.QuickFilterPanel.prototype._createField = function(filterIndex, field, initialValues) {
-    console.log(filterIndex, field, initialValues);
-    var fieldName = field.name || field,
-        modelField = this.model.getField(fieldName),
-        fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
-        initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
+// Rally.ui.inlinefilter.QuickFilterPanel.prototype._createField = function(filterIndex, field, initialValues) {
+//     console.log(filterIndex, field, initialValues);
+//     var fieldName = field.name || field,
+//         modelField = this.model.getField(fieldName),
+//         fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
+//         initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
 
-    if (modelField && modelField.isDate() && initialValue) {
-        initialValue = Rally.util.DateTime.fromIsoString(initialValue);
-    }
+//     if (modelField && modelField.isDate() && initialValue) {
+//         initialValue = Rally.util.DateTime.fromIsoString(initialValue);
+//     }
 
-    initialValue = Rally.ui.inlinefilter.FilterFieldFactory.getInitialValueForLegacyFilter(fieldConfig, initialValue);
-    fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfigForLegacyFilter(fieldConfig, initialValue);
+//     initialValue = Rally.ui.inlinefilter.FilterFieldFactory.getInitialValueForLegacyFilter(fieldConfig, initialValue);
+//     fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfigForLegacyFilter(fieldConfig, initialValue);
 
-    Ext.applyIf(fieldConfig, {
-        allowClear: true
-    });
+//     Ext.applyIf(fieldConfig, {
+//         allowClear: true
+//     });
 
-    Ext.merge(fieldConfig, {
-        autoExpand: this.autoExpand,
-        allowBlank: true,
-        clearText: '-- Clear Filter --',
-        hideLabel: false,
-        fieldLabel: ' ',
-        labelAlign: 'top',
-        labelSeparator: '',
-        enableKeyEvents: true,
-        margin: 0,
-        cls: this.isCustomMatchType() ? 'indexed-field' : '',
-        beforeLabelTextTpl: [
-            '<span class="filter-index">{[this.getFilterIndex()]}</span>',
-            {
-                filterIndex: filterIndex,
-                displayIndex: this.isCustomMatchType(),
-                getFilterIndex: function() {
-                    return this.displayIndex ? Ext.String.format('({0}) ', this.filterIndex) : '';
-                }
-            }
-        ],
-        model: this.model,
-        context: this.context,
-        operator: this._getOperatorForModelField(modelField),
-        afterSubTpl: '<span class="remove-quick-filter-icon icon-cross"></span>',
-        renderSelectors: {
-            removeIcon: '.remove-quick-filter-icon'
-        },
-        listeners: {
-            afterrender: function (field) {
-                field.removeIcon.on('click', _.partial(this._removeQuickFilter, field), this);
-            },
-            scope: this
-        }
-    });
+//     Ext.merge(fieldConfig, {
+//         autoExpand: this.autoExpand,
+//         allowBlank: true,
+//         clearText: '-- Clear Filter --',
+//         hideLabel: false,
+//         fieldLabel: ' ',
+//         labelAlign: 'top',
+//         labelSeparator: '',
+//         enableKeyEvents: true,
+//         margin: 0,
+//         cls: this.isCustomMatchType() ? 'indexed-field' : '',
+//         beforeLabelTextTpl: [
+//             '<span class="filter-index">{[this.getFilterIndex()]}</span>',
+//             {
+//                 filterIndex: filterIndex,
+//                 displayIndex: this.isCustomMatchType(),
+//                 getFilterIndex: function() {
+//                     return this.displayIndex ? Ext.String.format('({0}) ', this.filterIndex) : '';
+//                 }
+//             }
+//         ],
+//         model: this.model,
+//         context: this.context,
+//         operator: this._getOperatorForModelField(modelField),
+//         afterSubTpl: '<span class="remove-quick-filter-icon icon-cross"></span>',
+//         renderSelectors: {
+//             removeIcon: '.remove-quick-filter-icon'
+//         },
+//         listeners: {
+//             afterrender: function (field) {
+//                 field.removeIcon.on('click', _.partial(this._removeQuickFilter, field), this);
+//             },
+//             scope: this
+//         }
+//     });
 
-    if (!_.isUndefined(initialValue)) {
-        Ext.merge(fieldConfig, {
-            value: initialValue
-        });
-    }
+//     if (!_.isUndefined(initialValue)) {
+//         Ext.merge(fieldConfig, {
+//             value: initialValue
+//         });
+//     }
 
-    if (_.isPlainObject(field)) {
-        Ext.apply(fieldConfig, field);
-    }
+//     if (_.isPlainObject(field)) {
+//         Ext.apply(fieldConfig, field);
+//     }
 
-    if (filterIndex === 1) {
-        fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
-    }
+//     if (filterIndex === 1) {
+//         fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
+//     }
 
-    if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
-        Ext.merge(fieldConfig, {
-            autoSelect: true,
-            listeners: {
-                select: this._applyFilters,
-                scope: this
-            }
-        });
-    } else {
-        Ext.merge(fieldConfig, {
-            listeners: {
-                change: this._applyFilters,
-                scope: this
-            }
-        });
-    }
-    console.log(fieldConfig);
-    return Ext.widget(fieldConfig);
-};
+//     if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
+//         Ext.merge(fieldConfig, {
+//             autoSelect: true,
+//             listeners: {
+//                 select: this._applyFilters,
+//                 scope: this
+//             }
+//         });
+//     } else {
+//         Ext.merge(fieldConfig, {
+//             listeners: {
+//                 change: this._applyFilters,
+//                 scope: this
+//             }
+//         });
+//     }
+//     console.log(fieldConfig);
+//     return Ext.widget(fieldConfig);
+// };
+Ext.override(Rally.ui.gridboard.GridBoard, {
+    getInlineFilterPanel: function() {
+        return this.down('#customFilterPanel');
+    },
+
+});

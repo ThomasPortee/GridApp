@@ -1,5 +1,5 @@
 {
-  "name": "Milestone Test App 240105_03(Custom Fields)",
+  "name": "Milestone Test App (Custom Filter-DEV)",
   "version": "1.3.10",
   "scripts": {
     "debug": "grunt debug",

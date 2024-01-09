@@ -84,7 +84,7 @@ Ext.define("custom-grid-with-deep-export", {
     // Usual monkey business to size gridboards
     onResize: function() {
         console.log('onResize');
-        this.callParent(arguments);        
+        this.callParent(arguments);
         var gridArea = this.down('#grid-area');
         var gridboard = this.down('rallygridboard');
         if (gridArea && gridboard) {
@@ -327,34 +327,20 @@ Ext.define("custom-grid-with-deep-export", {
             },
         }
         );
+        
         this.gridboard = gridArea.add({
             xtype: 'rallygridboard',
             context: context,
             modelNames: this.modelNames,
             toggleState: 'grid',
-            height: gridArea.getHeight()-80,
+            height: gridArea.getHeight()-10,
             originHeight: undefined,
-            resizeHelp: function(me, filterPaneHeight){
-                if (filterPaneHeight > 0){
-
-                }
-                else{}
-                // // console.log(Ext.dom.Query.select( '.inline-filter-panel' ));
-                // if (me.originHeight == undefined)
-                //     me.originHeight = me.getHeight() - filterPaneHeight;
-                // console.log(filterPaneHeight, me.originHeight)
-                // if (filterPaneHeight == 0){
-                //     me.setHeight(me.originHeight + 200);
-                // }else{
-                //     me.setHeight(me.originHeight - filterPaneHeight - 200);
-                // }
-            },
             listeners: {
                 scope: this,
                 viewchange: this.viewChange,
             },
             plugins: [
-                // 'rallygridboardaddnew',
+                'rallygridboardaddnew',
                 // {
                 //     ptype: 'rallygridboardinlinefiltercontrol',
                 //     inlineFilterButtonConfig: {
