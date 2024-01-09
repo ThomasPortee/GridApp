@@ -116,12 +116,13 @@ Ext.define("custom-grid-with-deep-export", {
         });
     },
     _beforeLoadStore: function(store, operation, eOpts) {
-        var _loadProjectsByMilestone =  function(milestone, stateQuery){
+        var _loadProjectsByMilestone =  function(milestone, subQuery){
             var artifacts = milestone.Artifacts;
-            if (stateQuery != undefined)
-                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
+            if (subQuery != undefined)
+                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(subQuery);
             else 
                 var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project'
+            console.log(urlForArtifacts);
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
@@ -151,7 +152,7 @@ Ext.define("custom-grid-with-deep-export", {
             }
         };
 
-        var _generateQueryForMilestones = function(urlSurfixForMilestone, stateQuery){
+        var _generateQueryForMilestones = function(urlSurfixForMilestone, subQuery){
             //console.log('https://rally1.rallydev.com/slm/webservice/v2.0/' + urlSurfixForMilestone);
             var response = Ext.Ajax.request({
                 async: false,
@@ -161,7 +162,7 @@ Ext.define("custom-grid-with-deep-export", {
             
             if (response.status == 200){
                 var responseTextObj = Ext.JSON.decode(response.responseText);
-                return _loadProjectsByMilestone(responseTextObj.Milestone, stateQuery);
+                return _loadProjectsByMilestone(responseTextObj.Milestone, subQuery);
             }
             return "";
         }
@@ -235,7 +236,16 @@ Ext.define("custom-grid-with-deep-export", {
                 }
             }
             if (milestoneFilterValue != undefined){
-                milestoneQuery = _generateQueryForMilestones(milestoneFilterValue, stateQuery);
+                var subQuery = undefined;
+                if (stateQuery != undefined & portfolioItemTypeQuery != undefined)
+                {
+                    subQuery = '(' + stateQuery + ' AND ' + portfolioItemTypeQuery + ')';
+                }else if( stateQuery != undefined){
+                    subQuery = stateQuery;
+                }else if ( portfolioItemTypeQuery != undefined){
+                    subQuery = portfolioItemTypeQuery;
+                }
+                milestoneQuery = _generateQueryForMilestones(milestoneFilterValue, subQuery);
                 if (milestoneQuery != '')
                 {
                     if (queryFilters == '' || queryFilters == undefined)
