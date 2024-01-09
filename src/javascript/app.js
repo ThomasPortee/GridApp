@@ -25,7 +25,7 @@ Ext.define("custom-grid-with-deep-export", {
     config: {
         defaultSettings: {
             columnNames: ['FormattedID', 'Name', 'State'],
-            query: '(((State = "Idea Prioritization") OR (State = "Problem Discovery") OR (State = "Solution Discovery")))',
+            // query: '(((State = "Idea Prioritization") OR (State = "Problem Discovery") OR (State = "Solution Discovery")))',
             showControls: true,
             type: 'PortfolioItem/Epic',
             pageSize: 50,
@@ -116,10 +116,12 @@ Ext.define("custom-grid-with-deep-export", {
         });
     },
     _beforeLoadStore: function(store, operation, eOpts) {
-        var _loadProjectsByMilestone =  function(milestone){
+        var _loadProjectsByMilestone =  function(milestone, stateQuery){
             var artifacts = milestone.Artifacts;
-            var stateQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND (FormattedID contains "E%"))';
-            var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
+            if (stateQuery != undefined)
+                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(stateQuery);
+            else 
+                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project'
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
@@ -137,7 +139,7 @@ Ext.define("custom-grid-with-deep-export", {
                         queryForMilestone = '(Project = "/project/'+projectUUID+'")';
                     }else{
                         queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'"))';
-                    }                   
+                    }
                     
                     if (index < responseProjects.length -1){
                         queryForMilestone += " OR ";
@@ -149,7 +151,7 @@ Ext.define("custom-grid-with-deep-export", {
             }
         };
 
-        var _generateQueryForMilestones = function(urlSurfixForMilestone){
+        var _generateQueryForMilestones = function(urlSurfixForMilestone, stateQuery){
             //console.log('https://rally1.rallydev.com/slm/webservice/v2.0/' + urlSurfixForMilestone);
             var response = Ext.Ajax.request({
                 async: false,
@@ -159,7 +161,7 @@ Ext.define("custom-grid-with-deep-export", {
             
             if (response.status == 200){
                 var responseTextObj = Ext.JSON.decode(response.responseText);
-                return _loadProjectsByMilestone(responseTextObj.Milestone);
+                return _loadProjectsByMilestone(responseTextObj.Milestone, stateQuery);
             }
             return "";
         }
@@ -183,12 +185,15 @@ Ext.define("custom-grid-with-deep-export", {
             }
         }
 
-        if (operation.filters.length>1)
+        if (operation.filters.length>0)
         {
-            console.log(operation.filters)
-            var filtersCollection = _buildFiltersCollection(operation.filters[1], []);
-            var queryFilters = "";
-
+            var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
+            var queryFilters = undefined;
+            console.log(filtersCollection);
+            var milestoneFilterValue = undefined;
+            var milestoneQuery = undefined;
+            var stateQuery = undefined;
+            var portfolioItemTypeQuery = undefined;
             for (var index = 0; index < filtersCollection.length; index++) {
                 const filter = filtersCollection[index];
                 
@@ -198,37 +203,61 @@ Ext.define("custom-grid-with-deep-export", {
                         query = '(' + filter.property + ' ' + filter.operator.substring(1)+ ' "' + filter.value + '")';
                     }
                     else
-                    {query = _generateQueryForMilestones(filter.value);}
-                    if (query == ''){
-                        query = '( State = "" )';
-                    }
+                    { milestoneFilterValue = filter.value; continue;}
                 }
                 else{
+                    
+                    //this case can be considered as "State"
                     if (filter.operator == 'OR' || filter.operator == 'AND'){
-                        query = '(' + filter.property + ' ' + filter.operator+ ' ' + filter.value + ' )';                        
+                        query = '(' + filter.property + ' ' + filter.operator+ ' ' + filter.value + ' )';
+                        stateQuery = query;
                     }
-                        
-                    else
+                    else{
                         query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
+                        if (filter.property == 'State')
+                            stateQuery = query;
+                        else if (filter.property == 'PortfolioItemType.Name')
+                            portfolioItemTypeQuery = query;
+                    }
                 }
                 if (query == "") continue;
 
-                if (index == 0)
+                if (queryFilters == undefined)
                 {
                     queryFilters = query
                 }else{
-                    queryFilters = '('+ queryFilters + query + ')';
+                    if (query != "")
+                        queryFilters = '('+ queryFilters + query + ')';
                 }
                 
-                if (index < filtersCollection.length -1){
+                if (index < filtersCollection.length -1 ){
                     queryFilters += " AND ";
                 }
             }
-            console.log('queryFilters', queryFilters);
+            if (milestoneFilterValue != undefined){
+                milestoneQuery = _generateQueryForMilestones(milestoneFilterValue, stateQuery);
+                if (milestoneQuery != '')
+                {
+                    if (queryFilters == '' || queryFilters == undefined)
+                    {
+                        queryFilters = milestoneQuery;
+                    }
+                    else {
+                        queryFilters = '(' + queryFilters + (queryFilters.slice(-1) == ')' ? ' AND ' : '') + milestoneQuery + ')';
+                    }
+                }
+                else
+                {
+                    queryFilters = queryFilters.slice(0, queryFilters.length - 4);  // remove 'AND'
+                    queryFilters = ' ( FormattedID = 0 ) ';
+                }
+            }
+             
+            console.log('portfolioItemTypeQuery', portfolioItemTypeQuery);
             var pageSize = Ext.clone(store.lastOptions.params.pagesize);
             var startIndex = store.lastOptions.params.start;
             if (queryFilters != undefined && queryFilters != ""){
-                var composedQuery = '((((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) AND ' + queryFilters +')';                
+                var composedQuery =  queryFilters;
                 Ext.apply(operation, {
                     params: {
                         query:composedQuery,
@@ -322,7 +351,7 @@ Ext.define("custom-grid-with-deep-export", {
             },
             listeners: {
                 scope: this,
-                viewchange: this.viewChange,                
+                viewchange: this.viewChange,
             },
             plugins: [
                 // 'rallygridboardaddnew',

@@ -387,16 +387,13 @@ Ext.define('Rally.ui.inlinefilter.CustomFilterButton', {
             previousFilters = previousTypesAndFilters.filters.toString(),
             currentTypes = currentTypesAndFilters.types.toString(),
             currentFilters = currentTypesAndFilters.filters.toString();
-        console.log('_typesOrFiltersChanged', previousTypes, currentTypes, previousFilters, currentFilters);
         return previousTypes !== currentTypes || previousFilters !== currentFilters;
     },
 
     _onFilterChange: function() {
-        console.log('_onFilterChange');
         if (this._typesOrFiltersChanged()) {
             this._recordMetrics();
             this._applyFilters();
-            console.log('_applyFilters');
         }
         this.fireEvent('viewstatesave', this);
     },

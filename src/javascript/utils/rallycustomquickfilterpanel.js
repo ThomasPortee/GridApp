@@ -397,7 +397,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
     },
 
     _applyFilters: function() {
-        console.log('_applyFilters');
         this.fireEvent('filterchange', this);
     },
 
