@@ -185,7 +185,8 @@ Ext.define("custom-grid-with-deep-export", {
                 return collection;
             }
         }
-
+        var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
+        
         if (operation.filters.length>0)
         {
             var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
@@ -195,6 +196,7 @@ Ext.define("custom-grid-with-deep-export", {
             var milestoneQuery = undefined;
             var stateQuery = undefined;
             var portfolioItemTypeQuery = undefined;
+            
             for (var index = 0; index < filtersCollection.length; index++) {
                 const filter = filtersCollection[index];
                 
@@ -219,6 +221,12 @@ Ext.define("custom-grid-with-deep-export", {
                             stateQuery = query;
                         else if (filter.property == 'PortfolioItemType.Name')
                             portfolioItemTypeQuery = query;
+                            if (filter.value == 'Epic')
+                            {
+                                typesForPortfolioItemType = "portfolioitem/epic";
+                            }else if(filter.value == 'Feature'){
+                                typesForPortfolioItemType = "portfolioitem/feature";
+                            }
                     }
                 }
                 if (query == "") continue;
@@ -272,11 +280,20 @@ Ext.define("custom-grid-with-deep-export", {
                     params: {
                         query:composedQuery,
                         pagesize: pageSize,
-                        start: startIndex
+                        start: startIndex,
+                        types: typesForPortfolioItemType
                     }
                });
-            }
+            }            
+            
+        } else {
+            Ext.apply(operation, {
+                params: {
+                    types: typesForPortfolioItemType
+                }
+           });
         }
+        console.log(operation);
         return;
     },
 ////////////////////////////////////////////////////////////////////////////////////////////////////    

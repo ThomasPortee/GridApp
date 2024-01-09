@@ -209,7 +209,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             emptyText: 'Filter by PortfolioItem Type',
             labelAlign: 'right',
             labelWidth: 150,
-            width: 450,
+            width: 250,
             labelSeparator: '',
             enableKeyEvents: true,
             hideLabel: false,
@@ -283,7 +283,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             clearText: '-- Clear Filter --',
             labelAlign: 'right',
             labelWidth: 150,
-            width: 450,
+            width: 250,
             labelSeparator: '',
             enableKeyEvents: true,
             hideLabel: false,
@@ -412,19 +412,19 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
     _createAddQuickFilterButton: function() {
         var mileStoneFilterConfig = {
-            width: 450,
-            labelWidth: 150,
+            width: 300,
+            labelWidth: 100,
             fieldLabel: 'Milestone'
         };
         var stateFilterConfig = {
-            width: 450,
-            labelWidth: 150,
+            width: 300,
+            labelWidth: 100,
             fieldLabel: 'State',
             multiSelect: true,
         };
         var artifactFilterConfig = {
-            width: 450,
-            labelWidth: 150,
+            width: 300,
+            labelWidth: 100,
             fieldLabel: 'PortfolioItem Type',
         }
 
@@ -432,71 +432,85 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         var cboMileStones = this._createField(1, 'Milestones', null, mileStoneFilterConfig);
         var cboState = this._createField(2, 'State', null, stateFilterConfig);
     
-        this.addQuickFilterButton = Ext.widget({
-            xtype: 'container',
-            columnWidth: 0.8,
-            layout:'vbox',
-            height: '125px',
-            flex: 1,
-            items: [
-                
-               {
-                    xtype: 'container',
-                    flex: 1,
-                    layout: 'hbox',
-                    items: [
-                        cboArtifact,
-                        
-                    ]
-        
-                },
-                {
-                    xtype: 'container',
-                    flex: 1,
-                    layout: 'hbox',
-                    items: [
-                        cboState,
-                        {
-                            xtype:'label',
-                            text: 'Test Description',
-                            padding: '0 0 0 20',
-                            width: 200,
-                            style: 'display:inline-block;text-align:center',
-                            cls: 'bold-label',
-                        },
-                    ]
-        
-                },
-                {
-                    xtype: 'container',
-                    layout: 'hbox',
-                    flex: 1,
-                    items:[
-                        
-                        cboMileStones,
-                        // {
-                        //     xtype: 'rallybutton',
-                        //     enableToggle: true,
-                        //     itemId: 'btBlocked',
-                        //     margin: '6 6 6 185',
-                        //     cls: 'primary rly-small',
-                        //     iconCls: 'icon-blocked',
-                        //     toolTipText: "Calculate time in Blocked state",
+        this.addQuickFilterButton = Ext.widget(
+            {
+                xtype: 'container',
+                layout: 'column',
+                items : [
+                    {
+                        xtype: 'container',
+                        width: 320,
+                        items : [
+                            {
+                                xtype: 'container',
+                                columnWidth: 0.8,
+                                layout:'vbox',
+                                height: '125px',
+                                flex: 1,
+                                items: [
+                                    
+                                {
+                                        xtype: 'container',
+                                        flex: 1,
+                                        layout: 'hbox',
+                                        items: [
+                                            cboArtifact,
+                                            
+                                        ]
                             
-                        // }, {
-                        //     xtype: 'rallybutton',
-                        //     enableToggle: true,
-                        //     itemId: 'btReady',
-                        //     margin: 6,
-                        //     iconCls: 'icon-ok',
-                        //     cls: 'primary rly-small',                            
-                        //     toolTipText: "Calculate time in Ready state"
+                                    },
+                                    {
+                                        xtype: 'container',
+                                        flex: 1,
+                                        layout: 'hbox',
+                                        items: [
+                                            cboState,                        
+                                        ]
                             
-                        // }
-                    ]
-                }
-            ]
-        });
+                                    },
+                                    {
+                                        xtype: 'container',
+                                        layout: 'hbox',
+                                        flex: 1,
+                                        items:[
+                                            
+                                            cboMileStones,
+                                            // {
+                                            //     xtype: 'rallybutton',
+                                            //     enableToggle: true,
+                                            //     itemId: 'btBlocked',
+                                            //     margin: '6 6 6 185',
+                                            //     cls: 'primary rly-small',
+                                            //     iconCls: 'icon-blocked',
+                                            //     toolTipText: "Calculate time in Blocked state",
+                                                
+                                            // }, {
+                                            //     xtype: 'rallybutton',
+                                            //     enableToggle: true,
+                                            //     itemId: 'btReady',
+                                            //     margin: 6,
+                                            //     iconCls: 'icon-ok',
+                                            //     cls: 'primary rly-small',                            
+                                            //     toolTipText: "Calculate time in Ready state"
+                                                
+                                            // }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        xtype: 'container',
+                        padding: '20 30',
+                        columnWidth: 1,
+                        html : 'Test description. This section will serve as an area to input the App description and working scope. This area will be updated once details have been confirmed. <br/><br/>&nbsp; - &nbsp; Test Bullet <br/>&nbsp; - &nbsp; Test Bullet '
+                    }
+                ]
+            }
+            
+        
+        );
         this.fields = [];
         this.fields.push(cboArtifact);
         this.fields.push(cboMileStones);
