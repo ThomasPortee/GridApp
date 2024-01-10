@@ -186,7 +186,7 @@ Ext.define("custom-grid-with-deep-export", {
             }
         }
         var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
-        
+        var pageSize = Ext.clone(store.lastOptions.params.pagesize);
         if (operation.filters.length>0)
         {
             var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
@@ -271,8 +271,7 @@ Ext.define("custom-grid-with-deep-export", {
                 }
             }
              
-            console.log('portfolioItemTypeQuery', portfolioItemTypeQuery);
-            var pageSize = Ext.clone(store.lastOptions.params.pagesize);
+            
             var startIndex = store.lastOptions.params.start;
             if (queryFilters != undefined && queryFilters != ""){
                 var composedQuery =  queryFilters;
@@ -284,12 +283,14 @@ Ext.define("custom-grid-with-deep-export", {
                         types: typesForPortfolioItemType
                     }
                });
-            }            
+            } 
             
         } else {
             Ext.apply(operation, {
                 params: {
-                    types: typesForPortfolioItemType
+                    types: typesForPortfolioItemType,
+                    pagesize: pageSize,
+
                 }
            });
         }
