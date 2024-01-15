@@ -322,7 +322,6 @@ Ext.define('Rally.technicalservices.HierarchyLoader', {
                     queryFilters += " AND ";
                 }
             }
-            console.log(operation.filters);
             // var pageSize = Ext.clone(store.lastOptions.params.pagesize);
             // var startIndex = store.lastOptions.params.start;
             if (queryFilters != undefined && queryFilters != ""){

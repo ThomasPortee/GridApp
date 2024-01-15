@@ -83,7 +83,6 @@ Ext.define("custom-grid-with-deep-export", {
 
     // Usual monkey business to size gridboards
     onResize: function() {
-        console.log('onResize');
         this.callParent(arguments);
         var gridArea = this.down('#grid-area');
         var gridboard = this.down('rallygridboard');
@@ -122,7 +121,7 @@ Ext.define("custom-grid-with-deep-export", {
                 var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(subQuery);
             else 
                 var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project'
-            console.log(urlForArtifacts);
+            console.log('URL for retrieving projects : ', urlForArtifacts);
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
@@ -191,7 +190,6 @@ Ext.define("custom-grid-with-deep-export", {
         {
             var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
             var queryFilters = undefined;
-            console.log(filtersCollection);
             var milestoneFilterValue = undefined;
             var milestoneQuery = undefined;
             var stateQuery = undefined;
@@ -294,7 +292,6 @@ Ext.define("custom-grid-with-deep-export", {
                 }
            });
         }
-        console.log(operation);
         return;
     },
 ////////////////////////////////////////////////////////////////////////////////////////////////////    
@@ -698,7 +695,6 @@ Ext.define("custom-grid-with-deep-export", {
     },
 
     setHeight: function(height) {
-        console.log('setHeight(height)');
         this.callParent(arguments);
         if (this.gridboard) {
             this.gridboard.setHeight(height);

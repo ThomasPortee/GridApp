@@ -1,6 +1,6 @@
 {
-  "name": "Milestone Test App (Custom Filter-DEV)",
-  "version": "1.3.10",
+  "name": "Milestone Test App (Primary Milestone)",
+  "version": "1.3.11",
   "scripts": {
     "debug": "grunt debug",
     "debug:watch": "nodemon --exec grunt debug",

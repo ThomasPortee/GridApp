@@ -237,7 +237,6 @@ Rally.ui.inlinefilter.OperatorFieldComboBox.prototype._getAllowedQueryOperatorSt
         if (store) {
             storeConfig.autoLoad = false;
             storeConfig.proxy = store.proxy.clone();
-            console.log(field, this.customOperatorField);
             storeConfig.shouldReplaceOperatorName = field.isCollection();
         }
     }
