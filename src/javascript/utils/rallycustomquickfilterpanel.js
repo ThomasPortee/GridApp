@@ -267,9 +267,10 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
     _createCustomCheckboxField: function(fieldConfig, change_func) {
         Ext.merge(fieldConfig, {
             xtype: 'checkbox',
+            labelAlign: 'right',
             listeners: {
                 change : function(me, newValue, oldValue, eOpts){
-                    change_func(newValue);                    
+                    change_func(newValue);
                 },
                 scope: this
             }
@@ -306,8 +307,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             allowNoEntry: true,
             emptyText: emptyText,
             labelAlign: 'right',
-            labelWidth: 150,
-            width: 250,
             labelSeparator: '',
             enableKeyEvents: true,
             hideLabel: false,
@@ -379,8 +378,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             allowBlank: true,
             clearText: '-- Clear Filter --',
             labelAlign: 'right',
-            labelWidth: 150,
-            width: 250,
             labelSeparator: '',
             enableKeyEvents: true,
             hideLabel: false,
@@ -508,12 +505,12 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
     _createAddQuickFilterButton: function() {
         var milestoneFilterConfig = {
             width: 300,
-            labelWidth: 100,
+            labelWidth: 150,
             fieldLabel: 'Milestone'
         };
         var primaryMileStoneFilterConfig = {
             width: 300,
-            labelWidth: 100,
+            labelWidth: 150,
             fieldLabel: 'Primary Milestone',
             disabled: true,
             store: Ext.create('Rally.data.wsapi.Store', {
@@ -528,15 +525,17 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
            }),
            listeners: {
                 enable: function(me, eOpts){
+                    me.getStore().load();
+                },
+                disable: function(me, eOpts){
                     me.setValue(null);
                     me.getStore().removeAll();
-                    me.getStore().load();
                 }
            }
         };
         var stateFilterConfig = {
             width: 300,
-            labelWidth: 100,
+            labelWidth: 150,
             fieldLabel: 'State',
             multiSelect: true,
             store : Ext.create('Rally.data.wsapi.Store', {
@@ -551,14 +550,14 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         };
         var artifactFilterConfig = {
             width: 300,
-            labelWidth: 100,
+            labelWidth: 150,
             fieldLabel: 'PortfolioItem Type',
         };
 
         var isPrimaryFilterConfig = {
             width: 300,
-            labelWidth: 100,
-            fieldLabel: 'Primary Milestone',
+            labelWidth: 150,
+            fieldLabel: 'Is Primary Milestone',
         }
 
         var cboState = this._createCustomComboField(1, 'State', null, stateFilterConfig, 'State', 'Filter By State');
@@ -579,7 +578,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                 items : [
                     {
                         xtype: 'container',
-                        width: 320,
+                        width: 350,
                         items : [
                             {
                                 xtype: 'container',
