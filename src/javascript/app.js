@@ -365,41 +365,7 @@ Ext.define("custom-grid-with-deep-export", {
                 viewchange: this.viewChange,
             },
             plugins: [
-                'rallygridboardaddnew',
-                // {
-                //     ptype: 'rallygridboardinlinefiltercontrol',
-                //     inlineFilterButtonConfig: {
-                //         stateful: true,
-                //         stateId: this.getModelScopedStateId(currentModelName, 'filters'),
-                //         modelNames: this.modelNames,
-                //         inlineFilterPanelConfig: {
-                //             // quickFilterPanelConfig: {
-                //             //     whiteListFields: [
-                //             //        'Tags',
-                //             //        'Milestones'
-                //             //     ],
-                //             //     defaultFields: [
-                //             //         'Milestones',
-                //             //         'Project'
-                //             //     ]
-                //             // },
-                //             advancedFilterPanelConfig: {
-                //                 matchTypeConfig: {
-                //                     value: 'AND'
-                //                 },                
-                //                 advancedFilterRowsConfig: {
-                //                     propertyFieldConfig: {
-                //                         blackListFields: [
-                //                             'Tags',
-                //                             'Milestones'
-                //                         ],
-                //                     }
-                //                 }
-                //             }
-                            
-                //         }
-                //     }
-                // },
+                'rallygridboardaddnew',               
                 {
                     ptype: 'rallygridboardcustomfiltercontrol',
                     inlineFilterButtonConfig: {

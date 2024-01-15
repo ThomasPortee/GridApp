@@ -187,7 +187,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         Ext.applyIf(fieldConfig, {
             // allowClear: true
         });
-
         
         Ext.merge(fieldConfig, {
             xtype: 'rallycombobox',
@@ -265,8 +264,37 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         return Ext.widget(fieldConfig);
     },
+    _createCustomCheckboxField: function(fieldConfig, change_func) {
+        Ext.merge(fieldConfig, {
+            xtype: 'checkbox',
+            listeners: {
+                change : function(me, newValue, oldValue, eOpts){
+                    change_func(newValue);
+                    // var portfolioItemTypeFilter = undefined;
+                    // this._applyFilters();
+                    // if (newValue != null && linkedField != null){
+                    //     portfolioItemTypeFilter = Ext.create('Rally.data.wsapi.Filter', {
+                    //         property: 'Typedef.Name',
+                    //         operation: '=',
+                    //         value: newValue
+                    //     });
+                    //     linkedField.getStore().clearFilter(true);
+                    //     linkedField.getStore().filter([portfolioItemTypeFilter]);
+                    //     linkedField.getStore().load();
+                    // } else if (linkedField != null) {
+                    //     linkedField.setValue(null);
+                    //     linkedField.getStore().removeAll();                        
+                    // }
+                    
+                },
+                scope: this
+            }
+        });
+        console.log(fieldConfig)
 
-    _createStateField: function(filterIndex, field, initialValues, addtitionalConfig) {
+        return Ext.widget(fieldConfig);
+    },
+    _createCustomComboField: function(filterIndex, field, initialValues, addtitionalConfig, name, emptyText) {
         
         var fieldName = field.name || field,
             modelField = this.model.getField(fieldName),
@@ -285,26 +313,16 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             // allowClear: true
         });
 
-        var stateStore = Ext.create('Rally.data.wsapi.Store', {
-            model: "State",
-            sorters: [
-                {
-                    property: 'OrderIndex',
-                    direction: 'ASC'
-                }
-            ],
-       });
 
         Ext.merge(fieldConfig, {
             xtype: 'rallycombobox',
-            store: stateStore,
-            name: 'State',
+            name: name,
             displayField: 'Name',
             valueField: '_ref',
             autoExpand: this.autoExpand,
             // clearText: '-- Clear Filter --',
             allowNoEntry: true,
-            emptyText: 'Filter by PortfolioItem Type',
+            emptyText: emptyText,
             labelAlign: 'right',
             labelWidth: 150,
             width: 250,
@@ -355,8 +373,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         return Ext.widget(fieldConfig);
     },
-
-
 
     _createField: function(filterIndex, field, initialValues, addtitionalConfig) {
         var fieldName = field.name || field,
@@ -435,7 +451,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             });
         }
         return Ext.widget(fieldConfig);
-        
     },
 
     focusFirstField: function() {
@@ -509,44 +524,64 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
     },
 
     _createAddQuickFilterButton: function() {
-        var mileStoneFilterConfig = {
+        var milestoneFilterConfig = {
             width: 300,
             labelWidth: 100,
             fieldLabel: 'Milestone'
+        };
+        var primaryMileStoneFilterConfig = {
+            width: 300,
+            labelWidth: 100,
+            fieldLabel: 'Primary Milestone',
+            store: Ext.create('Rally.data.wsapi.Store', {
+                model: "Milestone",
+                filter: [
+                    Ext.create('Rally.data.wsapi.Filter', {
+                        property: 'c_PrimaryMilestoneFlag',
+                        operation: '=',
+                        value: 'True'
+                    })
+                ]
+           })
         };
         var stateFilterConfig = {
             width: 300,
             labelWidth: 100,
             fieldLabel: 'State',
             multiSelect: true,
+            store : Ext.create('Rally.data.wsapi.Store', {
+                model: "State",
+                sorters: [
+                    {
+                        property: 'OrderIndex',
+                        direction: 'ASC'
+                    }
+                ],
+           })
         };
         var artifactFilterConfig = {
             width: 300,
             labelWidth: 100,
             fieldLabel: 'PortfolioItem Type',
+        };
+
+        var isPrimaryFilterConfig = {
+            width: 300,
+            labelWidth: 100,
+            fieldLabel: 'Primary Milestone',
         }
-        var stateStore = Ext.create('Rally.data.wsapi.Store', {
-            model: "State",
-            filters: [
-                {
-                    property: 'Typedef.Name',
-                    value: 'Feature'
-                }
-            ],
-            sorters: [
-                {
-                    property: 'OrderIndex',
-                    direction: 'ASC'
-                }
-            ]
-       });
-       
-        var cboState = this._createStateField(1, 'State', null, stateFilterConfig);
+
+        var cboState = this._createCustomComboField(1, 'State', null, stateFilterConfig, 'State', 'Filter By State');
         var cboArtifact = this._createPortfolioItemTypeField(0, 'PortfolioItemType', null, artifactFilterConfig, cboState);
+        var cboMilestones = this._createField(2, 'Milestones', null, milestoneFilterConfig);
+        var cboPrimaryMilestones = this._createCustomComboField(3, 'Milestones', null, primaryMileStoneFilterConfig, 'PrimaryMilestone', 'Filter By Primary Milestone');
+
+        var chkIsPrimaryMlestone_OnChange = function(val){
+            cboMilestones.setDisabled(val)
+            cboPrimaryMilestones.setDisabled(!val);
+        }
+        var chkIsPrimaryMlestone = this._createCustomCheckboxField(isPrimaryFilterConfig, chkIsPrimaryMlestone_OnChange);
         
-        var cboMileStones = this._createField(2, 'Milestones', null, mileStoneFilterConfig);
-        
-    
         this.addQuickFilterButton = Ext.widget(
             {
                 xtype: 'container',
@@ -560,7 +595,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                 xtype: 'container',
                                 columnWidth: 0.8,
                                 layout:'vbox',
-                                height: '125px',
+                                height: '165px',
                                 flex: 1,
                                 items: [
                                     
@@ -573,13 +608,22 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                             
                                         ]
                             
+                                    },                                    
+                                    {
+                                        xtype: 'container',
+                                        flex: 1,
+                                        layout: 'hbox',
+                                        items: [
+                                            cboState,
+                                        ]
+                            
                                     },
                                     {
                                         xtype: 'container',
                                         flex: 1,
                                         layout: 'hbox',
                                         items: [
-                                            cboState,                        
+                                            chkIsPrimaryMlestone
                                         ]
                             
                                     },
@@ -588,27 +632,15 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                         layout: 'hbox',
                                         flex: 1,
                                         items:[
-                                            
-                                            cboMileStones,
-                                            // {
-                                            //     xtype: 'rallybutton',
-                                            //     enableToggle: true,
-                                            //     itemId: 'btBlocked',
-                                            //     margin: '6 6 6 185',
-                                            //     cls: 'primary rly-small',
-                                            //     iconCls: 'icon-blocked',
-                                            //     toolTipText: "Calculate time in Blocked state",
-                                                
-                                            // }, {
-                                            //     xtype: 'rallybutton',
-                                            //     enableToggle: true,
-                                            //     itemId: 'btReady',
-                                            //     margin: 6,
-                                            //     iconCls: 'icon-ok',
-                                            //     cls: 'primary rly-small',                            
-                                            //     toolTipText: "Calculate time in Ready state"
-                                                
-                                            // }
+                                            cboMilestones,
+                                        ]
+                                    },
+                                    {
+                                        xtype: 'container',
+                                        layout: 'hbox',
+                                        flex: 1,
+                                        items:[
+                                            cboPrimaryMilestones,
                                         ]
                                     }
                                 ]
@@ -628,7 +660,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         );
         this.fields = [];
         this.fields.push(cboArtifact);
-        this.fields.push(cboMileStones);
+        this.fields.push(cboMilestones);
         this.fields.push(cboState);
     },
 
