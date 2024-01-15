@@ -269,29 +269,11 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             xtype: 'checkbox',
             listeners: {
                 change : function(me, newValue, oldValue, eOpts){
-                    change_func(newValue);
-                    // var portfolioItemTypeFilter = undefined;
-                    // this._applyFilters();
-                    // if (newValue != null && linkedField != null){
-                    //     portfolioItemTypeFilter = Ext.create('Rally.data.wsapi.Filter', {
-                    //         property: 'Typedef.Name',
-                    //         operation: '=',
-                    //         value: newValue
-                    //     });
-                    //     linkedField.getStore().clearFilter(true);
-                    //     linkedField.getStore().filter([portfolioItemTypeFilter]);
-                    //     linkedField.getStore().load();
-                    // } else if (linkedField != null) {
-                    //     linkedField.setValue(null);
-                    //     linkedField.getStore().removeAll();                        
-                    // }
-                    
+                    change_func(newValue);                    
                 },
                 scope: this
             }
         });
-        console.log(fieldConfig)
-
         return Ext.widget(fieldConfig);
     },
     _createCustomComboField: function(filterIndex, field, initialValues, addtitionalConfig, name, emptyText) {
@@ -533,16 +515,24 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             width: 300,
             labelWidth: 100,
             fieldLabel: 'Primary Milestone',
+            disabled: true,
             store: Ext.create('Rally.data.wsapi.Store', {
                 model: "Milestone",
-                filter: [
+                filters: [
                     Ext.create('Rally.data.wsapi.Filter', {
                         property: 'c_PrimaryMilestoneFlag',
                         operation: '=',
                         value: 'True'
                     })
                 ]
-           })
+           }),
+           listeners: {
+                enable: function(me, eOpts){
+                    me.setValue(null);
+                    me.getStore().removeAll();
+                    me.getStore().load();
+                }
+           }
         };
         var stateFilterConfig = {
             width: 300,
