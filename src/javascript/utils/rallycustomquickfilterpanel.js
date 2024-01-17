@@ -506,7 +506,16 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         var milestoneFilterConfig = {
             width: 300,
             labelWidth: 150,
-            fieldLabel: 'Milestone'
+            fieldLabel: 'Milestone',
+            listeners: {
+                enable: function(me, eOpts){
+                    me.getStore().load();
+                },
+                disable: function(me, eOpts){
+                    me.setValue(null);
+                    me.getStore().removeAll();
+                }
+           }
         };
         var primaryMileStoneFilterConfig = {
             width: 300,
