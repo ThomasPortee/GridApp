@@ -267,10 +267,11 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
     _createCustomCheckboxField: function(fieldConfig, change_func) {
         Ext.merge(fieldConfig, {
             xtype: 'checkbox',
-            labelAlign: 'right',
             listeners: {
                 change : function(me, newValue, oldValue, eOpts){
-                    change_func(newValue);
+                    this._applyFilters();
+                    if (change_func !== null)
+                        change_func(newValue);
                 },
                 scope: this
             }
@@ -530,7 +531,12 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                         operation: '=',
                         value: 'True'
                     })
-                ]
+                ],
+                listeners: {
+                    load: function(me, data, success){
+                        Rally.technicalservices.CustomGridWithDeepExportSettings.primaryMilestones = data;
+                    }
+                }
            }),
            listeners: {
                 enable: function(me, eOpts){
@@ -566,7 +572,17 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         var isPrimaryFilterConfig = {
             width: 300,
             labelWidth: 150,
+            labelAlign: 'right',
+            name: 'IsPrimaryMilestone',
             fieldLabel: 'Is Primary Milestone',
+        }
+
+        var isIncludeSubmilestoneConfig = {
+            width: 150,
+            padding: '0 0 0 10',
+            boxLabelAlign: 'after',
+            name: 'IsIncludeSubmilestone',
+            boxLabel:'Include submilestones',
         }
 
         var cboState = this._createCustomComboField(1, 'State', null, stateFilterConfig, 'State', 'Filter By State');
@@ -577,8 +593,10 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         var chkIsPrimaryMlestone_OnChange = function(val){
             cboMilestones.setDisabled(val)
             cboPrimaryMilestones.setDisabled(!val);
-        }
+        };
+        
         var chkIsPrimaryMlestone = this._createCustomCheckboxField(isPrimaryFilterConfig, chkIsPrimaryMlestone_OnChange);
+        // var chkIsIncludeSubMilestone = this._createCustomCheckboxField(isIncludeSubmilestoneConfig, null);
         
         this.addQuickFilterButton = Ext.widget(
             {
@@ -587,13 +605,13 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                 items : [
                     {
                         xtype: 'container',
-                        width: 350,
+                        width: 460,
                         items : [
                             {
                                 xtype: 'container',
                                 columnWidth: 0.8,
                                 layout:'vbox',
-                                height: '165px',
+                                height: '175px',
                                 flex: 1,
                                 items: [
                                     
@@ -636,9 +654,10 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                     {
                                         xtype: 'container',
                                         layout: 'hbox',
-                                        flex: 1,
+                                        height: '50',
                                         items:[
                                             cboPrimaryMilestones,
+                                            // chkIsIncludeSubMilestone
                                         ]
                                     }
                                 ]
@@ -658,8 +677,12 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         );
         this.fields = [];
         this.fields.push(cboArtifact);
-        this.fields.push(cboMilestones);
         this.fields.push(cboState);
+        this.fields.push(chkIsPrimaryMlestone);
+        this.fields.push(cboMilestones);
+        this.fields.push(cboPrimaryMilestones);
+        // this.fields.push(chkIsIncludeSubMilestone);
+
     },
 
     _onToggleAdvanced: function() {

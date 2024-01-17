@@ -21,7 +21,7 @@
             'Rally.ui.combobox.ComboBox',
             'Rally.ui.CheckboxField'
         ],
-
+        primaryMilestones: [],
         getFields: function() {
 
             var type_filters = Rally.data.wsapi.Filter.or([
@@ -75,6 +75,6 @@
                 getHiddenFieldConfig('columnNames'),
                 getHiddenFieldConfig('order')
             ];
-        }
+        },
     });
 })();
