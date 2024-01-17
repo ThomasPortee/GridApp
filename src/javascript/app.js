@@ -115,6 +115,7 @@ Ext.define("custom-grid-with-deep-export", {
         });
     },
     _beforeLoadStore: function(store, operation, eOpts) {
+        var treeMilestones = undefined;
         var _fetchPrimaryMilestoneInfo = function(milestones, startIndex, pageSize){
             
             var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone?&start=" + startIndex + "&pagesize=" + pageSize + "&fetch=FormattedID,c_PrimaryMilestone"
@@ -289,8 +290,7 @@ Ext.define("custom-grid-with-deep-export", {
             var milestoneFilterValue = undefined;
             var milestoneQuery = undefined;
             var stateQuery = undefined;
-            var portfolioItemTypeQuery = undefined;
-            var treeMilestones = undefined;
+            var portfolioItemTypeQuery = undefined;            
             var milestonesToAdd = undefined;
             
             for (var index = 0; index < filtersCollection.length; index++) {
@@ -320,7 +320,8 @@ Ext.define("custom-grid-with-deep-export", {
                             continue;
                         }
                         if (filter.property == 'PrimaryMilestone'){
-                            treeMilestones = _buildMilestoneTree();
+                            if (treeMilestones == undefined)
+                                treeMilestones = _buildMilestoneTree();
                             var formattedID = getFormattedIDByRef(filter.value);
                             var milestonesToAdd = _traverseTree(treeMilestones,formattedID, []);
                             if (milestonesToAdd.length == 0)

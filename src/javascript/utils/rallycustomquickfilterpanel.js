@@ -254,9 +254,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                     }else{
                         cboState.setValue(null);
                         cboState.getStore().removeAll();
-                        
                     }
-                    
                 },
                 scope: this
             }
@@ -269,14 +267,37 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             xtype: 'checkbox',
             listeners: {
                 change : function(me, newValue, oldValue, eOpts){
-                    this._applyFilters();
                     if (change_func !== null)
                         change_func(newValue);
+                    this._applyFilters();
                 },
                 scope: this
             }
         });
         return Ext.widget(fieldConfig);
+    },
+
+    _createClearFiltersButton: function(buttonConfig, cboState, cboArtifact, cboMilestones, cboPrimaryMilestones, chkIsPrimaryMlestone){
+        Ext.merge(buttonConfig, {
+            xtype: 'button',
+            cls: 'toggle-advanced-button rly-small secondary',
+            margin: '10,0,0,0',
+            listeners: {
+                click : function(me, e, eOpts){
+                    cboState.setValue(null);
+                    cboState.getStore().removeAll();
+                    cboMilestones.setValue(null);
+                    cboMilestones.getStore().removeAll();
+                    cboPrimaryMilestones.setValue(null);
+                    cboPrimaryMilestones.getStore().removeAll();
+                    cboArtifact.setValue(null);
+                    chkIsPrimaryMlestone.setValue(false);
+                    this._applyFilters();
+                },
+                scope: this
+            }
+        });
+        return Ext.widget(buttonConfig);
     },
     _createCustomComboField: function(filterIndex, field, initialValues, addtitionalConfig, name, emptyText) {
         
@@ -519,8 +540,8 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
            }
         };
         var primaryMileStoneFilterConfig = {
-            width: 300,
-            labelWidth: 150,
+            width: 260,
+            labelWidth: 110,
             fieldLabel: 'Primary Milestone',
             disabled: true,
             store: Ext.create('Rally.data.wsapi.Store', {
@@ -570,34 +591,26 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         };
 
         var isPrimaryFilterConfig = {
-            width: 300,
+            width: 200,
             labelWidth: 150,
             labelAlign: 'right',
             name: 'IsPrimaryMilestone',
             fieldLabel: 'Is Primary Milestone',
-        }
-
-        var isIncludeSubmilestoneConfig = {
-            width: 150,
-            padding: '0 0 0 10',
-            boxLabelAlign: 'after',
-            name: 'IsIncludeSubmilestone',
-            boxLabel:'Include submilestones',
+        };
+        var chkIsPrimaryMlestone_OnChange = function(val){
+            cboMilestones.setDisabled(val)
+            cboPrimaryMilestones.setDisabled(!val);
+        };
+        var clearFilterButtonConfig = {
+            text: 'Clear Filters'
         }
 
         var cboState = this._createCustomComboField(1, 'State', null, stateFilterConfig, 'State', 'Filter By State');
         var cboArtifact = this._createPortfolioItemTypeField(0, 'PortfolioItemType', null, artifactFilterConfig, cboState);
         var cboMilestones = this._createField(2, 'Milestones', null, milestoneFilterConfig);
         var cboPrimaryMilestones = this._createCustomComboField(3, 'Milestones', null, primaryMileStoneFilterConfig, 'PrimaryMilestone', 'Filter By Primary Milestone');
-
-        var chkIsPrimaryMlestone_OnChange = function(val){
-            cboMilestones.setDisabled(val)
-            cboPrimaryMilestones.setDisabled(!val);
-        };
-        
         var chkIsPrimaryMlestone = this._createCustomCheckboxField(isPrimaryFilterConfig, chkIsPrimaryMlestone_OnChange);
-        // var chkIsIncludeSubMilestone = this._createCustomCheckboxField(isIncludeSubmilestoneConfig, null);
-        
+        var btnClearFilters = this._createClearFiltersButton(clearFilterButtonConfig, cboState, cboArtifact, cboMilestones, cboPrimaryMilestones, chkIsPrimaryMlestone);
         this.addQuickFilterButton = Ext.widget(
             {
                 xtype: 'container',
@@ -605,7 +618,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                 items : [
                     {
                         xtype: 'container',
-                        width: 460,
+                        width: 560,
                         items : [
                             {
                                 xtype: 'container',
@@ -639,7 +652,8 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                         flex: 1,
                                         layout: 'hbox',
                                         items: [
-                                            chkIsPrimaryMlestone
+                                            chkIsPrimaryMlestone,
+                                            btnClearFilters
                                         ]
                             
                                     },
@@ -648,18 +662,18 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                         layout: 'hbox',
                                         flex: 1,
                                         items:[
-                                            cboMilestones,
+                                            cboMilestones, cboPrimaryMilestones
                                         ]
                                     },
-                                    {
-                                        xtype: 'container',
-                                        layout: 'hbox',
-                                        height: '50',
-                                        items:[
-                                            cboPrimaryMilestones,
-                                            // chkIsIncludeSubMilestone
-                                        ]
-                                    }
+                                    // {
+                                    //     xtype: 'container',
+                                    //     layout: 'hbox',
+                                    //     height: '50',
+                                    //     items:[
+                                    //         cboPrimaryMilestones,
+                                    //         // chkIsIncludeSubMilestone
+                                    //     ]
+                                    // }
                                 ]
                             }
                         ]
