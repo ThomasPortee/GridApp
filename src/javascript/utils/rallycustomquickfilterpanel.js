@@ -241,7 +241,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             listeners: {
                 change : function(me, newValue, oldValue, eOpts){
                     var portfolioItemTypeFilter = undefined;
-                    this._applyFilters();
+                    // this._applyFilters();
                     if (newValue != null){
                         portfolioItemTypeFilter = Ext.create('Rally.data.wsapi.Filter', {
                             property: 'Typedef.Name',
@@ -269,7 +269,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                 change : function(me, newValue, oldValue, eOpts){
                     if (change_func !== null)
                         change_func(newValue);
-                    this._applyFilters();
+                    // this._applyFilters();
                 },
                 scope: this
             }
@@ -284,14 +284,14 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             margin: '10,0,0,0',
             listeners: {
                 click : function(me, e, eOpts){
-                    cboState.setValue(null);
-                    cboState.getStore().removeAll();
-                    cboMilestones.setValue(null);
-                    cboMilestones.getStore().removeAll();
-                    cboPrimaryMilestones.setValue(null);
-                    cboPrimaryMilestones.getStore().removeAll();
-                    cboArtifact.setValue(null);
-                    chkIsPrimaryMlestone.setValue(false);
+                    // cboState.setValue(null);
+                    // cboState.getStore().removeAll();
+                    // cboMilestones.setValue(null);
+                    // cboMilestones.getStore().removeAll();
+                    // cboPrimaryMilestones.setValue(null);
+                    // cboPrimaryMilestones.getStore().removeAll();
+                    // cboArtifact.setValue(null);
+                    // chkIsPrimaryMlestone.setValue(false);
                     this._applyFilters();
                 },
                 scope: this
@@ -357,22 +357,22 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
         }
 
-        if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
-            Ext.merge(fieldConfig, {
-                autoSelect: false,
-                listeners: {
-                    select: this._applyFilters,
-                    scope: this
-                }
-            });
-        } else {
-            Ext.merge(fieldConfig, {
-                listeners: {
-                    change: this._applyFilters,
-                    scope: this
-                }
-            });
-        }       
+        // if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
+        //     Ext.merge(fieldConfig, {
+        //         autoSelect: false,
+        //         listeners: {
+        //             select: this._applyFilters,
+        //             scope: this
+        //         }
+        //     });
+        // } else {
+        //     Ext.merge(fieldConfig, {
+        //         listeners: {
+        //             change: this._applyFilters,
+        //             scope: this
+        //         }
+        //     });
+        // }       
 
         return Ext.widget(fieldConfig);
     },
@@ -435,22 +435,22 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
         }
 
-        if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
-            Ext.merge(fieldConfig, {
-                autoSelect: true,
-                listeners: {
-                    select: this._applyFilters,
-                    scope: this
-                }
-            });
-        } else {
-            Ext.merge(fieldConfig, {
-                listeners: {
-                    change: this._applyFilters,
-                    scope: this
-                }
-            });
-        }
+        // if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
+        //     Ext.merge(fieldConfig, {
+        //         autoSelect: true,
+        //         listeners: {
+        //             select: this._applyFilters,
+        //             scope: this
+        //         }
+        //     });
+        // } else {
+        //     Ext.merge(fieldConfig, {
+        //         listeners: {
+        //             change: this._applyFilters,
+        //             scope: this
+        //         }
+        //     });
+        // }
         return Ext.widget(fieldConfig);
     },
 
@@ -592,17 +592,18 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         var isPrimaryFilterConfig = {
             width: 200,
-            labelWidth: 150,
-            labelAlign: 'right',
+            margin: '0, 0, 0, 10',
             name: 'IsPrimaryMilestone',
-            fieldLabel: 'Is Primary Milestone',
+            boxLabel: 'Is Primary Milestone',
+            boxLabelAlign: 'after'
         };
         var chkIsPrimaryMlestone_OnChange = function(val){
             cboMilestones.setDisabled(val)
             cboPrimaryMilestones.setDisabled(!val);
         };
         var clearFilterButtonConfig = {
-            text: 'Clear Filters'
+            margin : '150,0,0,0',
+            text: 'Apply'
         }
 
         var cboState = this._createCustomComboField(1, 'State', null, stateFilterConfig, 'State', 'Filter By State');
@@ -644,18 +645,8 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                         layout: 'hbox',
                                         items: [
                                             cboState,
-                                        ]
-                            
-                                    },
-                                    {
-                                        xtype: 'container',
-                                        flex: 1,
-                                        layout: 'hbox',
-                                        items: [
                                             chkIsPrimaryMlestone,
-                                            btnClearFilters
                                         ]
-                            
                                     },
                                     {
                                         xtype: 'container',
@@ -665,6 +656,18 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                             cboMilestones, cboPrimaryMilestones
                                         ]
                                     },
+                                    {
+                                        xtype: 'container',
+                                        layout: 'hbox',
+                                        flex: 1,
+                                        items: [
+                                            {
+                                                xtype: 'container',
+                                                width: 150,
+                                            },
+                                            btnClearFilters
+                                        ]
+                                    }
                                     // {
                                     //     xtype: 'container',
                                     //     layout: 'hbox',

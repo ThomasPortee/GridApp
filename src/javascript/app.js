@@ -154,24 +154,34 @@ Ext.define("custom-grid-with-deep-export", {
             }
             return hasPrimary;
         }
-        var  _generateTreeStructure = function(data, idField, parentField) {
-            var tree = {};
+        var  _generateTreeStructure = function(milestones, idField, parentField) {
+            var tree = [];
             var map = {};
-          
-            for (var i = 0; i < data.length; i++) {
-              var item = data[i];
-              map[item[idField]] = { milestone: item.milestone, milestoneFormattedID: item.milestoneFormattedID, pMilestoneFormattedID: item.pMilestoneFormattedID, children: [] };
+            // First pass: create a map of all milestones by their ID
+            for (var i = 0; i < milestones.length; i++) {
+              var milestone = milestones[i];
+              map[milestone.milestoneFormattedID] = { 
+                'milestone': milestone.milestone, 
+                'milestoneFormattedID': milestone.milestoneFormattedID, 
+                'pMilestoneFormattedID': milestone.pMilestoneFormattedID,
+                'children': [] 
+              };
             }
-          
-            for (var i = 0; i < data.length; i++) {
-              var item = data[i];
-              if (item[parentField] !== item[idField]) {
-                map[item[parentField]].children.push(map[item[idField]]);
+            // Second pass: assign children to their parents
+            for (var i = 0; i < milestones.length; i++) {
+                var milestone = milestones[i];
+                if (milestone.pMilestoneFormattedID !== milestone.milestoneFormattedID) {                    
+                    if (map[milestone.pMilestoneFormattedID] == undefined) {
+                        // The parent milestone is not in the list, so this is a top-level milestone
+                        tree.push(map[milestone.milestoneFormattedID]);  
+                    } else {
+                        map[milestone.pMilestoneFormattedID].children.push(map[milestone.milestoneFormattedID]);
+                    }
               } else {
-                tree[item[idField]] = map[item[idField]];
+                // This is a root milestone
+                tree.push(map[milestone.milestoneFormattedID]);
               }
             }
-          
             return tree;
         }
         var getFormattedIDByRef = function(_ref){
