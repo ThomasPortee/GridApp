@@ -137,6 +137,7 @@ Ext.define("custom-grid-with-deep-export", {
         }
         var _processMilestonesHasPrimary = function(milestones){
             var hasPrimary = [];
+            var primaryMilestones = [];
             for (var index = 0; index < milestones.length; index++) {
                 var record = milestones[index];
                 if (record.c_PrimaryMilestone.Count > 0)
@@ -149,6 +150,34 @@ Ext.define("custom-grid-with-deep-export", {
                             'milestoneFormattedID': record.FormattedID,
                             'pMilestoneFormattedID' : pMilestoneFormattedID
                         });
+                        if (!primaryMilestones[pMilestoneFormattedID]){
+                            primaryMilestones[pMilestoneFormattedID] = {
+                                'included' : record.FormattedID == pMilestoneFormattedID,
+                                'milestone' : correctedRef,
+                                'milestoneFormattedID': record.FormattedID
+                            }
+                        }else{
+                            if (record.FormattedID == pMilestoneFormattedID){
+                                primaryMilestones[pMilestoneFormattedID]['included'] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            //addded for ommited : primary milestone 
+            for (var item in primaryMilestones){
+                if (primaryMilestones[item].included == false){
+                    for (var index = 0; index < milestones.length; index++) {
+                        var record = milestones[index];
+                        if (record.FormattedID == item){
+                            var correctedRef = '/milestone/' + record._refObjectUUID;
+                            hasPrimary.push({ 
+                                'milestone' : correctedRef,
+                                'milestoneFormattedID': record.FormattedID,
+                                'pMilestoneFormattedID' : record.FormattedID
+                            });    
+                        }
                     }
                 }
             }
@@ -332,8 +361,10 @@ Ext.define("custom-grid-with-deep-export", {
                         if (filter.property == 'PrimaryMilestone'){
                             if (treeMilestones == undefined)
                                 treeMilestones = _buildMilestoneTree();
+                            console.log('treeMilestones', treeMilestones);
                             var formattedID = getFormattedIDByRef(filter.value);
                             var milestonesToAdd = _traverseTree(treeMilestones,formattedID, []);
+                            console.log('milestonesToAdd', milestonesToAdd);
                             if (milestonesToAdd.length == 0)
                                 milestonesToAdd.push(filter.value);
                             continue;
@@ -381,7 +412,7 @@ Ext.define("custom-grid-with-deep-export", {
                 }
                 else
                 {
-                    queryFilters = queryFilters.slice(0, queryFilters.length - 4);  // remove 'AND'
+                    // queryFilters = queryFilters.slice(0, queryFilters.length - 4);  // remove 'AND'
                     queryFilters = ' ( FormattedID = 0 ) ';
                 }
                 
