@@ -319,6 +319,7 @@ Ext.define("custom-grid-with-deep-export", {
             }else if ( portfolioItemTypeQuery != undefined){
                 subQuery = portfolioItemTypeQuery;
             }
+            return subQuery;
         }
         var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
         var pageSize = Ext.clone(store.lastOptions.params.pagesize);
