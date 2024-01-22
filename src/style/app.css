@@ -15,3 +15,7 @@
     margin-right: 5px;
     cursor: pointer;
 }
+
+.x-btn-apply-pressed {
+    background-color: #3f84a4 !important;
+}

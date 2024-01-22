@@ -281,9 +281,11 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         Ext.merge(buttonConfig, {
             xtype: 'button',
             cls: 'toggle-advanced-button rly-small secondary',
+            pressedCls: 'apply-pressed',
             margin: '10,0,0,0',
             listeners: {
                 click : function(me, e, eOpts){
+
                     // cboState.setValue(null);
                     // cboState.getStore().removeAll();
                     // cboMilestones.setValue(null);
@@ -292,6 +294,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                     // cboPrimaryMilestones.getStore().removeAll();
                     // cboArtifact.setValue(null);
                     // chkIsPrimaryMlestone.setValue(false);
+
                     this._applyFilters();
                 },
                 scope: this
@@ -612,6 +615,8 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
         var cboPrimaryMilestones = this._createCustomComboField(3, 'Milestones', null, primaryMileStoneFilterConfig, 'PrimaryMilestone', 'Filter By Primary Milestone');
         var chkIsPrimaryMlestone = this._createCustomCheckboxField(isPrimaryFilterConfig, chkIsPrimaryMlestone_OnChange);
         var btnClearFilters = this._createClearFiltersButton(clearFilterButtonConfig, cboState, cboArtifact, cboMilestones, cboPrimaryMilestones, chkIsPrimaryMlestone);
+
+
         this.addQuickFilterButton = Ext.widget(
             {
                 xtype: 'container',
