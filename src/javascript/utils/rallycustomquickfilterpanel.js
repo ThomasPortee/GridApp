@@ -328,6 +328,9 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             displayField: 'Name',
             valueField: '_ref',
             autoExpand: this.autoExpand,
+            listConfig : {
+                itemTpl : '{FormattedID} {Name}'
+            },
             // clearText: '-- Clear Filter --',
             allowNoEntry: true,
             emptyText: emptyText,
@@ -379,7 +382,6 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         return Ext.widget(fieldConfig);
     },
-
     _createField: function(filterIndex, field, initialValues, addtitionalConfig) {
         var fieldName = field.name || field,
             modelField = this.model.getField(fieldName),
@@ -438,22 +440,70 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
             fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
         }
 
-        // if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
-        //     Ext.merge(fieldConfig, {
-        //         autoSelect: true,
-        //         listeners: {
-        //             select: this._applyFilters,
-        //             scope: this
-        //         }
-        //     });
-        // } else {
-        //     Ext.merge(fieldConfig, {
-        //         listeners: {
-        //             change: this._applyFilters,
-        //             scope: this
-        //         }
-        //     });
-        // }
+        return Ext.widget(fieldConfig);
+    },
+
+    _createMilestoneComboField: function(filterIndex, field, initialValues, addtitionalConfig) {
+        var fieldName = field.name || field,
+            modelField = this.model.getField(fieldName),
+            fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
+            initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
+
+        if (modelField && modelField.isDate() && initialValue) {
+            initialValue = Rally.util.DateTime.fromIsoString(initialValue);
+        }
+
+        initialValue = Rally.ui.inlinefilter.FilterFieldFactory.getInitialValueForLegacyFilter(fieldConfig, initialValue);
+        fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfigForLegacyFilter(fieldConfig, initialValue);
+
+        Ext.applyIf(fieldConfig, {
+            allowClear: true
+        });
+        console.log(fieldConfig)
+        
+        Ext.merge(fieldConfig, {
+            autoExpand: this.autoExpand,
+            allowBlank: true,
+            clearText: '-- Clear Filter --',
+            labelAlign: 'right',
+            listConfig : {
+                itemTpl : '{FormattedID} {Name}'
+            },            
+            labelSeparator: '',
+            enableKeyEvents: true,
+            hideLabel: false,
+            margin: 0,
+            cls: this.isCustomMatchType() ? 'indexed-field' : '',
+            beforeLabelTextTpl: [
+                '<span class="filter-index">{[this.getFilterIndex()]}</span>',
+                {
+                    filterIndex: filterIndex,
+                    displayIndex: this.isCustomMatchType(),
+                    getFilterIndex: function() {
+                        return this.displayIndex ? Ext.String.format('({0}) ', this.filterIndex) : '';
+                    }
+                }
+            ],
+            model: this.model,
+            context: this.context,
+            operator: this._getOperatorForModelField(modelField),
+        });
+        Ext.merge(fieldConfig, addtitionalConfig);
+
+        if (!_.isUndefined(initialValue)) {
+            Ext.merge(fieldConfig, {
+                value: initialValue
+            });
+        }
+
+        if (_.isPlainObject(field)) {
+            Ext.apply(fieldConfig, field);
+        }
+
+        if (filterIndex === 1) {
+            fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
+        }
+
         return Ext.widget(fieldConfig);
     },
 
@@ -556,6 +606,12 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                         value: 'True'
                     })
                 ],
+                sorters: [
+                    {
+                        property: 'Name',
+                        direction: 'Asc'
+                    }
+                ],
                 listeners: {
                     load: function(me, data, success){
                         Rally.technicalservices.CustomGridWithDeepExportSettings.primaryMilestones = data;
@@ -611,7 +667,7 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
 
         var cboState = this._createCustomComboField(1, 'State', null, stateFilterConfig, 'State', 'Filter By State');
         var cboArtifact = this._createPortfolioItemTypeField(0, 'PortfolioItemType', null, artifactFilterConfig, cboState);
-        var cboMilestones = this._createField(2, 'Milestones', null, milestoneFilterConfig);
+        var cboMilestones = this._createMilestoneComboField(2, 'Milestones', null, milestoneFilterConfig);
         var cboPrimaryMilestones = this._createCustomComboField(3, 'Milestones', null, primaryMileStoneFilterConfig, 'PrimaryMilestone', 'Filter By Primary Milestone');
         var chkIsPrimaryMlestone = this._createCustomCheckboxField(isPrimaryFilterConfig, chkIsPrimaryMlestone_OnChange);
         var btnClearFilters = this._createClearFiltersButton(clearFilterButtonConfig, cboState, cboArtifact, cboMilestones, cboPrimaryMilestones, chkIsPrimaryMlestone);

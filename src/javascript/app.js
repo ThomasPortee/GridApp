@@ -145,16 +145,19 @@ Ext.define("custom-grid-with-deep-export", {
                     for (var jIndex = 0; jIndex<record.c_PrimaryMilestone.Count; jIndex ++ ){
                         var correctedRef = '/milestone/' + record._refObjectUUID;
                         var pMilestoneFormattedID = record.c_PrimaryMilestone._tagsNameArray[jIndex].Name.split(":")[0].trim();
+                        console.log(record)
                         hasPrimary.push({ 
                             'milestone' : correctedRef,
                             'milestoneFormattedID': record.FormattedID,
-                            'pMilestoneFormattedID' : pMilestoneFormattedID
+                            'pMilestoneFormattedID' : pMilestoneFormattedID,
+                            'name' : record._refObjectName
                         });
                         if (!primaryMilestones[pMilestoneFormattedID]){
                             primaryMilestones[pMilestoneFormattedID] = {
                                 'included' : record.FormattedID == pMilestoneFormattedID,
                                 'milestone' : correctedRef,
-                                'milestoneFormattedID': record.FormattedID
+                                'milestoneFormattedID': record.FormattedID,
+                                'name' : record._refObjectName
                             }
                         }else{
                             if (record.FormattedID == pMilestoneFormattedID){
@@ -175,31 +178,33 @@ Ext.define("custom-grid-with-deep-export", {
                             hasPrimary.push({ 
                                 'milestone' : correctedRef,
                                 'milestoneFormattedID': record.FormattedID,
-                                'pMilestoneFormattedID' : record.FormattedID
-                            });    
+                                'pMilestoneFormattedID' : record.FormattedID,
+                                'name' : record.Name
+                            });
                         }
                     }
                 }
             }
             return hasPrimary;
         }
-        var  _generateTreeStructure = function(milestones, idField, parentField) {
+        var  _generateTreeStructure = function(milestones) {
             var tree = [];
             var map = {};
             // First pass: create a map of all milestones by their ID
             for (var i = 0; i < milestones.length; i++) {
-              var milestone = milestones[i];
+              var milestone = milestones[i];              
               map[milestone.milestoneFormattedID] = { 
                 'milestone': milestone.milestone, 
                 'milestoneFormattedID': milestone.milestoneFormattedID, 
                 'pMilestoneFormattedID': milestone.pMilestoneFormattedID,
+                'name': milestone.name,
                 'children': [] 
               };
             }
             // Second pass: assign children to their parents
             for (var i = 0; i < milestones.length; i++) {
                 var milestone = milestones[i];
-                if (milestone.pMilestoneFormattedID !== milestone.milestoneFormattedID) {                    
+                if (milestone.pMilestoneFormattedID !== milestone.milestoneFormattedID) {
                     if (map[milestone.pMilestoneFormattedID] == undefined) {
                         // The parent milestone is not in the list, so this is a top-level milestone
                         tree.push(map[milestone.milestoneFormattedID]);  
@@ -223,9 +228,9 @@ Ext.define("custom-grid-with-deep-export", {
             return null;
         }
         var _buildMilestoneTree = function(){
-            var milestones = _fetchPrimaryMilestoneInfo([], 1, 200);
+            var milestones = _fetchPrimaryMilestoneInfo([], 1, 2000);
             var milestonesHasPrimary = _processMilestonesHasPrimary(milestones);
-            return _generateTreeStructure(milestonesHasPrimary, 'milestoneFormattedID', 'pMilestoneFormattedID')
+            return _generateTreeStructure(milestonesHasPrimary)
         }
         var _traverseTree = function(tree, id, milestones, includeFlag) {
             for (var key in tree) {
@@ -330,7 +335,7 @@ Ext.define("custom-grid-with-deep-export", {
             var milestoneFilterValue = undefined;
             var milestoneQuery = undefined;
             var stateQuery = undefined;
-            var portfolioItemTypeQuery = undefined;            
+            var portfolioItemTypeQuery = undefined;
             var milestonesToAdd = undefined;
             
             for (var index = 0; index < filtersCollection.length; index++) {
