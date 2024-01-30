@@ -109,93 +109,6 @@ Rally.ui.inlinefilter.AdvancedFilterRow.prototype._createOperatorField =  functi
         }
     }, this.operatorFieldConfig));
 };
-Rally.ui.combobox.MilestoneComboBox.prototype.beforeQuery= function(queryPlan) {
-    var queryString = queryPlan.query,
-    filter = Ext.create('Rally.data.wsapi.Filter', {
-        property: 'Name',
-        operator: 'contains',
-        value: queryString
-    });
-    // stateFilter1 =  Ext.create('Rally.data.wsapi.Filter', {
-    //     property: 'State',
-    //     operator: '=',
-    //     value: "Idea Prioritization"
-    // }),
-    // stateFilter2 =  Ext.create('Rally.data.wsapi.Filter', {
-    //     property: 'State',
-    //     operator: '=',
-    //     value: "Problem Discovery"
-    // }),
-    // stateFilter3 =  Ext.create('Rally.data.wsapi.Filter', {
-    //     property: 'State',
-    //     operator: '=',
-    //     value: "Solution Discovery"
-    // }),
-    // stateFilters = stateFilter1.or(stateFilter2).or(stateFilter3);
-
-    // var loadArtifactsByMilestone = function(milestone){
-    //     var artifacts = milestone.Artifacts;
-    //     var stateQuery = '(((State = "Idea Prioritization") OR (State = "Problem Discovery")) OR (State = "Solution Discovery")) ';
-    //     var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&query='+ encodeURI(stateQuery);
-    //     var response = Ext.Ajax.request({
-    //         async: false,
-    //         url: urlForArtifacts,
-    //         method: "GET",
-    //     });
-
-    //     if (response.status == 200){
-    //         var responseTextObj = Ext.JSON.decode(response.responseText).QueryResult;
-    //         if (responseTextObj !== undefined)
-    //         {
-    //             responseTextObj = responseTextObj.Results;
-    //             if (responseTextObj.length > 0){
-    //                 return true;
-    //             }
-    //         }
-            
-    //     }
-    //     return false;
-    // }
-
-    // var response = Ext.Ajax.request({
-    //     async: false,
-    //     url: 'https://rally1.rallydev.com/slm/webservice/v2.0/milestones?fetch=Artifacts,FormattedID&pagesize=200',
-    //     method: "GET",
-    // });
-    // var filters = undefined;
-    // if (response.status == 200){
-    //     var responseTextObj = Ext.JSON.decode(response.responseText).QueryResult.Results;                
-    //     for (var inx = 0; inx< responseTextObj.length; inx++){
-    //         if (loadArtifactsByMilestone(responseTextObj[inx])){
-    //             var mileStoneFilter =  Ext.create('Rally.data.wsapi.Filter', {
-    //                 property: 'FormattedID',
-    //                 operator: '=',
-    //                 value: responseTextObj.FormattedID
-    //             });
-    //             if (filters == undefined)
-    //                 filters = Rally.data.wsapi.Filter.or(mileStoneFilter);
-    //             else
-    //                 filters = filters.or(mileStoneFilter);
-    //         }
-    //     }
-        
-    // }
-    // console.log(filters);
-
-    this.store.filters = this.store.filters.filterBy(function(item) {
-        return item.property !== 'Name' && item.property !== 'ObjectID';
-    });
-
-    if (queryString) {
-        queryPlan.query = Rally.data.wsapi.Filter.and(this.store.filters.getRange()).and(filter).toString();
-    } else {
-        queryPlan.query = Rally.data.wsapi.Filter.and(this.store.filters.getRange()).toString();
-    }
-    
-    queryPlan.forceAll = true;
-
-    return queryPlan;
-};
 
 
 Rally.ui.inlinefilter.OperatorFieldComboBox.prototype._getAllowedQueryOperatorStore=  function() {
@@ -243,96 +156,58 @@ Rally.ui.inlinefilter.OperatorFieldComboBox.prototype._getAllowedQueryOperatorSt
     return Ext.create('Ext.data.Store', storeConfig);
 };
 
-// Rally.ui.inlinefilter.QuickFilterPanel.prototype._createField = function(filterIndex, field, initialValues) {
-//     console.log(filterIndex, field, initialValues);
-//     var fieldName = field.name || field,
-//         modelField = this.model.getField(fieldName),
-//         fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfig(this.model, fieldName, this.context),
-//         initialValue = initialValues && initialValues[fieldConfig.name] && initialValues[fieldConfig.name].rawValue;
-
-//     if (modelField && modelField.isDate() && initialValue) {
-//         initialValue = Rally.util.DateTime.fromIsoString(initialValue);
-//     }
-
-//     initialValue = Rally.ui.inlinefilter.FilterFieldFactory.getInitialValueForLegacyFilter(fieldConfig, initialValue);
-//     fieldConfig = Rally.ui.inlinefilter.FilterFieldFactory.getFieldConfigForLegacyFilter(fieldConfig, initialValue);
-
-//     Ext.applyIf(fieldConfig, {
-//         allowClear: true
-//     });
-
-//     Ext.merge(fieldConfig, {
-//         autoExpand: this.autoExpand,
-//         allowBlank: true,
-//         clearText: '-- Clear Filter --',
-//         hideLabel: false,
-//         fieldLabel: ' ',
-//         labelAlign: 'top',
-//         labelSeparator: '',
-//         enableKeyEvents: true,
-//         margin: 0,
-//         cls: this.isCustomMatchType() ? 'indexed-field' : '',
-//         beforeLabelTextTpl: [
-//             '<span class="filter-index">{[this.getFilterIndex()]}</span>',
-//             {
-//                 filterIndex: filterIndex,
-//                 displayIndex: this.isCustomMatchType(),
-//                 getFilterIndex: function() {
-//                     return this.displayIndex ? Ext.String.format('({0}) ', this.filterIndex) : '';
-//                 }
-//             }
-//         ],
-//         model: this.model,
-//         context: this.context,
-//         operator: this._getOperatorForModelField(modelField),
-//         afterSubTpl: '<span class="remove-quick-filter-icon icon-cross"></span>',
-//         renderSelectors: {
-//             removeIcon: '.remove-quick-filter-icon'
-//         },
-//         listeners: {
-//             afterrender: function (field) {
-//                 field.removeIcon.on('click', _.partial(this._removeQuickFilter, field), this);
-//             },
-//             scope: this
-//         }
-//     });
-
-//     if (!_.isUndefined(initialValue)) {
-//         Ext.merge(fieldConfig, {
-//             value: initialValue
-//         });
-//     }
-
-//     if (_.isPlainObject(field)) {
-//         Ext.apply(fieldConfig, field);
-//     }
-
-//     if (filterIndex === 1) {
-//         fieldConfig.itemId = this.self.FOCUS_CMP_ITEM_ID;
-//     }
-
-//     if (this._shouldApplyFiltersOnSelect(fieldConfig)) {
-//         Ext.merge(fieldConfig, {
-//             autoSelect: true,
-//             listeners: {
-//                 select: this._applyFilters,
-//                 scope: this
-//             }
-//         });
-//     } else {
-//         Ext.merge(fieldConfig, {
-//             listeners: {
-//                 change: this._applyFilters,
-//                 scope: this
-//             }
-//         });
-//     }
-//     console.log(fieldConfig);
-//     return Ext.widget(fieldConfig);
-// };
 Ext.override(Rally.ui.gridboard.GridBoard, {
     getInlineFilterPanel: function() {
         return this.down('#customFilterPanel');
     },
-
 });
+
+Rally.ui.tree.PagingToolbar.prototype._onSubsequentLoads= function(store, node, records, successful, options) {
+    var hasTopLevelRecord = _.any(records, function(record) {
+        var isChildRecord = record.get('depth') > 1;
+        return !isChildRecord;
+    });
+    if (hasTopLevelRecord || records.length == 0) {
+        this._reRender();
+    }
+    this._recordMetricsEnd();
+}
+
+Ext.form.field.ComboBox.prototype.doQuery= function(queryString, forceAll, rawQuery) {
+    
+    var me = this,
+
+        // Decide if, and how we are going to query the store
+        queryPlan = me.beforeQuery({
+            query: queryString || '',
+            rawQuery: rawQuery,
+            forceAll: forceAll,
+            combo: me,
+            cancel: false
+        });
+
+    // Allow veto.
+    if (queryPlan === false || queryPlan.cancel) {
+        return false;
+    }
+
+    // If they're using the same value as last time, just show the dropdown
+    if (me.queryCaching && queryPlan.query === me.lastQuery) {
+        me.expand();
+        if (me.queryMode === 'local') {
+            me.doAutoSelect();
+        }
+    }
+    
+    // Otherwise filter or load the store
+    else {
+        me.lastQuery = queryPlan.query;
+        if (me.queryMode === 'local') {
+            me.doLocalQuery(queryPlan);
+        } else {
+            me.doRemoteQuery(queryPlan);
+        }
+    }
+
+    return true;
+}

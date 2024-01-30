@@ -6,6 +6,9 @@ Ext.define("custom-grid-with-deep-export", {
         type: 'vbox',
         align: 'stretch'
     },
+    mixins: [
+        'Rally.app.Scopeable'
+    ],
     items: [{
         id: Utils.AncestorPiAppFilter.RENDER_AREA_ID,
         xtype: 'container',
@@ -114,11 +117,57 @@ Ext.define("custom-grid-with-deep-export", {
             scope: this
         });
     },
+
+    _preaparingMask : undefined,
     _beforeLoadStore: function(store, operation, eOpts) {
+        var projectRef = store.projectRef;
         var treeMilestones = undefined;
         var _fetchPrimaryMilestoneInfo = function(milestones, startIndex, pageSize){
             
-            var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone?&start=" + startIndex + "&pagesize=" + pageSize + "&fetch=FormattedID,c_PrimaryMilestone"
+            var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone?&start=" + startIndex + "&project=" + projectRef + "&pagesize=" + pageSize + "&fetch=FormattedID,c_PrimaryMilestone"
+            var response = Ext.Ajax.request({
+                async: false,
+                url: url,
+                method: "GET",
+            });
+            if (response.status == 200){
+                var responseTextObj = Ext.JSON.decode(response.responseText);
+                milestones = milestones.concat(responseTextObj.QueryResult.Results);
+                if (responseTextObj.QueryResult.TotalResultCount > startIndex + pageSize)
+                {
+                    return _fetchPrimaryMilestoneInfo(milestones, startIndex + pageSize, pageSize);
+                }else{
+                    return milestones;
+                }
+            }
+        }
+        var _fetchMilestonesByFormattedID = function(milestones, startIndex, pageSize, filters){
+            var query = filters == undefined ? '' : filters.toString();
+            var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone?&start=" + startIndex + "&project=" + projectRef +  "&pagesize=" + pageSize + "&fetch=FormattedID&query="+ query
+            var response = Ext.Ajax.request({
+                async: false,
+                url: url,
+                method: "GET",
+            });
+            if (response.status == 200){
+                var responseTextObj = Ext.JSON.decode(response.responseText);
+                milestones = milestones.concat(responseTextObj.QueryResult.Results);
+                if (responseTextObj.QueryResult.TotalResultCount > startIndex + pageSize)
+                {
+                    return _fetchPrimaryMilestoneInfo(milestones, startIndex + pageSize, pageSize);
+                }else{
+                    return milestones;
+                }
+            }
+        }
+        var _fetchPrimaryMilestoneInfo_alt = function(milestones, startIndex, pageSize){
+            filters = Ext.create('Rally.data.wsapi.Filter', {
+                property: 'c_PrimaryMilestone',
+                operator: '!contains',
+                value: 'NULL'
+            });
+
+            var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone?&start=" + startIndex + "&project=" + projectRef + "&pagesize=" + pageSize + "&fetch=FormattedID,c_PrimaryMilestone&query=" + filters.toString();
             var response = Ext.Ajax.request({
                 async: false,
                 url: url,
@@ -145,7 +194,6 @@ Ext.define("custom-grid-with-deep-export", {
                     for (var jIndex = 0; jIndex<record.c_PrimaryMilestone.Count; jIndex ++ ){
                         var correctedRef = '/milestone/' + record._refObjectUUID;
                         var pMilestoneFormattedID = record.c_PrimaryMilestone._tagsNameArray[jIndex].Name.split(":")[0].trim();
-                        console.log(record)
                         hasPrimary.push({ 
                             'milestone' : correctedRef,
                             'milestoneFormattedID': record.FormattedID,
@@ -184,6 +232,73 @@ Ext.define("custom-grid-with-deep-export", {
                         }
                     }
                 }
+            }
+            return hasPrimary;
+        }
+        var _processMilestonesHasPrimary_alt = function(milestones){
+            var hasPrimary = [];
+            var primaryMilestones = [];
+            for (var index = 0; index < milestones.length; index++) {
+                var record = milestones[index];
+                if (record.c_PrimaryMilestone.Count > 0)
+                {
+                    for (var jIndex = 0; jIndex<record.c_PrimaryMilestone.Count; jIndex ++ ){
+                        var correctedRef = '/milestone/' + record._refObjectUUID;
+                        var pMilestoneFormattedID = record.c_PrimaryMilestone._tagsNameArray[jIndex].Name.split(":")[0].trim();
+                        hasPrimary.push({ 
+                            'milestone' : correctedRef,
+                            'milestoneFormattedID': record.FormattedID,
+                            'pMilestoneFormattedID' : pMilestoneFormattedID,
+                            'name' : record._refObjectName
+                        });
+                        if (!primaryMilestones[pMilestoneFormattedID]){
+                            primaryMilestones[pMilestoneFormattedID] = {
+                                'included' : record.FormattedID == pMilestoneFormattedID,
+                                'milestone' : correctedRef,
+                                'milestoneFormattedID': record.FormattedID,
+                                'name' : record._refObjectName
+                            }
+                        }else{
+                            if (record.FormattedID == pMilestoneFormattedID){
+                                primaryMilestones[pMilestoneFormattedID]['included'] = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            var primaryMilestonesNotIncluded = [];
+            filterForObjIDs = undefined
+            //addded for ommited : primary milestone 
+            for (var item in primaryMilestones){
+                if (primaryMilestones[item].included == false){
+
+                    if (filterForObjIDs == undefined){
+                        filterForObjIDs = Ext.create('Rally.data.wsapi.Filter', {
+                            property: 'FormattedID',
+                            operator: '=',
+                            value: item
+                        });
+                    }else{
+                        filterForObjIDs = filterForObjIDs.or(Ext.create('Rally.data.wsapi.Filter', {
+                            property: 'FormattedID',
+                            operator: '=',
+                            value: item
+                        }));
+                    }
+                    primaryMilestonesNotIncluded.push(item);
+                }
+            }
+            var fetchedMilestones = _fetchMilestonesByFormattedID([], 0, 2000, filterForObjIDs.toString());
+            for (var index = 0; index < fetchedMilestones.length; index++) {
+                var record = fetchedMilestones[index];
+                var correctedRef = '/milestone/' + record._refObjectUUID;
+                hasPrimary.push({ 
+                    'milestone' : correctedRef,
+                    'milestoneFormattedID': record.FormattedID,
+                    'pMilestoneFormattedID' : record.FormattedID,
+                    'name' : record.Name
+                });
             }
             return hasPrimary;
         }
@@ -228,21 +343,35 @@ Ext.define("custom-grid-with-deep-export", {
             return null;
         }
         var _buildMilestoneTree = function(){
-            var milestones = _fetchPrimaryMilestoneInfo([], 1, 2000);
-            var milestonesHasPrimary = _processMilestonesHasPrimary(milestones);
-            return _generateTreeStructure(milestonesHasPrimary)
+            // var milestones = _fetchPrimaryMilestoneInfo([], 1, 2000);
+            var milestones_alt = _fetchPrimaryMilestoneInfo_alt([], 1, 2000);
+            // var milestonesHasPrimary = _processMilestonesHasPrimary(milestones);
+            var milestonesHasPrimary_alt = _processMilestonesHasPrimary_alt(milestones_alt);
+            // console.log('_buildMilestoneTree 0: ', milestonesHasPrimary);
+            // console.log('milestones: ', milestones);
+            // console.log('milestonesHasPrimary: ', milestonesHasPrimary);
+            return _generateTreeStructure(milestonesHasPrimary_alt);
         }
-        var _traverseTree = function(tree, id, milestones, includeFlag) {
-            for (var key in tree) {
-                if (tree.hasOwnProperty(key)) {
-                    var node = tree[key];
-                    if (node.milestoneFormattedID === id || includeFlag) {
-                        includeFlag = true;
-                        milestones.push(node.milestone);
-                    }
-                    if (node.children.length > 0) {
-                        _traverseTree(node.children, id, milestones, includeFlag);
-                    }
+        var _fetchMilestoneTreeByFormattedID =  function(tree, id) {
+            for (var i = 0; i < tree.length; i++) {
+              if (tree[i].milestoneFormattedID === id) {
+                return tree[i];
+              } else if (tree[i].children.length > 0) {
+                var result = _fetchMilestoneTreeByFormattedID(tree[i].children, id);
+                if (result) {
+                  return result;
+                }
+              }
+            }
+            return null;
+          }
+        var _traverseTree = function(tree, milestones) {
+            if (tree == null) return [];
+            milestones.push(tree.milestone);
+            if (tree.children.length > 0) {
+                for (var i = 0; i< tree.children.length; i++)
+                {
+                _traverseTree(tree.children[i], milestones);
                 }
             }
             return milestones;
@@ -250,13 +379,78 @@ Ext.define("custom-grid-with-deep-export", {
         var _loadProjectsByMilestone =  function(milestone, subQuery){
             var artifacts = milestone.Artifacts;
             if (subQuery != undefined)
-                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project&query='+ encodeURI(subQuery);
+                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + "&project=" + projectRef + '&fetch=Project&query='+ encodeURI(subQuery);
             else 
-                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + '&fetch=Project'
+                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + "&project=" + projectRef + '&fetch=Project'
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
                 method: "GET",
+            });
+            if (response.status == 200){
+                var responseTextObj = Ext.JSON.decode(response.responseText);
+                var responseProjects = responseTextObj.QueryResult.Results;
+                var queryForMilestone = "";
+                for (var index = 0; index < responseProjects.length; index++) {
+                    //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
+                    const projectUUID = responseProjects[index].Project._refObjectUUID;
+                    if (index == 0)
+                    {
+                        queryForMilestone = '(Project = "/project/'+projectUUID+'")';
+                    }else{
+                        queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'"))';
+                    }
+                    
+                    if (index < responseProjects.length -1){
+                        queryForMilestone += " OR ";
+                    }
+                }
+                return queryForMilestone;
+            }else{
+                return ""
+            }
+        };
+
+        var _generateQueryForMilestones_alt =  function(milestones, subQuery, portfolioItemTypesQuery_alt){
+            var filters = undefined;
+            for (var index = 0; index < milestones.length; index++) {
+                var record = milestones[index];
+                if (filters == undefined){
+                    filters = Ext.create('Rally.data.wsapi.Filter', {
+                        property: 'Milestones',
+                        operator: '=',
+                        value: record
+                    });
+                }else{
+                    filters = filters.or(Ext.create('Rally.data.wsapi.Filter', {
+                        property: 'Milestones',
+                        operator: '=',
+                        value: record
+                    }));
+                }
+            }
+            var url = 'https://rally1.rallydev.com/slm/webservice/v2.0/artifact';
+            var query = '';
+            if (subQuery != '' && subQuery != undefined && filters != undefined)
+                query = '(' + subQuery +' AND ' + filters.toString() + ')';
+            else if ((subQuery == '' || subQuery == undefined) && filters != undefined) 
+                query = filters.toString();
+            else if (subQuery != '' && subQuery != undefined && filters == undefined) 
+                query = subQuery
+            else 
+                query = '';
+
+            var response = Ext.Ajax.request({
+                async: false,
+                url: url,
+                params:{
+                    query: query,
+                    pagesize: 2000,
+                    project: projectRef,
+                    types: portfolioItemTypesQuery_alt,
+                    start: 1,
+                    fetch: 'Project'
+                }
             });
             if (response.status == 200){
                 var responseTextObj = Ext.JSON.decode(response.responseText);
@@ -326,8 +520,10 @@ Ext.define("custom-grid-with-deep-export", {
             }
             return subQuery;
         }
+        // var _beforeLoadStoreFn = function(){
         var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
         var pageSize = Ext.clone(store.lastOptions.params.pagesize);
+        
         if (operation.filters.length>0)
         {
             var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
@@ -336,6 +532,7 @@ Ext.define("custom-grid-with-deep-export", {
             var milestoneQuery = undefined;
             var stateQuery = undefined;
             var portfolioItemTypeQuery = undefined;
+            var portfolioItemTypesQuery_alt = 'portfolioitem/epic, portfolioitem/feature';
             var milestonesToAdd = undefined;
             
             for (var index = 0; index < filtersCollection.length; index++) {
@@ -349,7 +546,7 @@ Ext.define("custom-grid-with-deep-export", {
                     else
                     { milestoneFilterValue = filter.value; continue;}
                 }
-                else{                    
+                else{
                     //this case can be considered as "State" : multiple selections
                     if (filter.operator == 'OR' || filter.operator == 'AND'){
                         query = '(' + filter.property + ' ' + filter.operator+ ' ' + filter.value + ' )';
@@ -367,11 +564,9 @@ Ext.define("custom-grid-with-deep-export", {
                         if (filter.property == 'PrimaryMilestone'){
                             if (treeMilestones == undefined)
                                 treeMilestones = _buildMilestoneTree();
-                            console.log('treeMilestones', treeMilestones);
                             var formattedID = getFormattedIDByRef(filter.value);
-                            var milestonesToAdd = _traverseTree(treeMilestones,formattedID, []);
-                            console.log('milestonesToAdd', milestonesToAdd);
-                            if (milestonesToAdd.length == 0)
+                            var milestonesToAdd = _traverseTree(_fetchMilestoneTreeByFormattedID(treeMilestones, formattedID), [], false)
+                            if (milestonesToAdd == undefined || milestonesToAdd.length == 0)
                                 milestonesToAdd.push(filter.value);
                             continue;
                         }
@@ -379,8 +574,16 @@ Ext.define("custom-grid-with-deep-export", {
                         query = '(' + filter.property + ' ' + filter.operator+ ' "' + filter.value + '")';
                         if (filter.property == 'State')
                             stateQuery = query;
-                        else if (filter.property == 'PortfolioItemType.Name')
+                        else if (filter.property == 'PortfolioItemType.Name'){
                             portfolioItemTypeQuery = query;
+                            if (filter.value == 'Epic'){
+                                portfolioItemTypesQuery_alt = 'portfolioitem/epic';
+                            } else if (filter.value == 'Feature'){
+                                portfolioItemTypesQuery_alt = 'portfolioitem/feature';
+                            } else if (filter.value == undefined){
+                                portfolioItemTypesQuery_alt = 'portfolioitem/epic,portfolioitem/feature'
+                            }
+                        }
                         if (filter.value == 'Epic')
                         {
                             typesForPortfolioItemType = "portfolioitem/epic";
@@ -397,7 +600,7 @@ Ext.define("custom-grid-with-deep-export", {
                 }else{
                     if (query != "")
                         queryFilters = '('+ queryFilters + query + ')';
-                }                
+                }
                 if (index < filtersCollection.length -1 ){
                     queryFilters += " AND ";
                 }
@@ -423,14 +626,18 @@ Ext.define("custom-grid-with-deep-export", {
                 }
                 
             }else if (milestonesToAdd != undefined){
-                var subQuery = _generateSubQuery(stateQuery, portfolioItemTypeQuery);
                 var queryFilterArray = [];
-                for (var index = 0; index < milestonesToAdd.length; index++) {
-                    var milestoneValue = milestonesToAdd[index];
-                    milestoneQuery = _generateQueryForMilestones(milestoneValue, subQuery);
-                    if (milestoneQuery != '')
-                        queryFilterArray.push(milestoneQuery);
-                }
+                var milestoneQuery = undefined;
+                milestoneQuery = _generateQueryForMilestones_alt(milestonesToAdd, stateQuery, portfolioItemTypesQuery_alt);
+                console.log('milestonesToAdd', milestonesToAdd);
+                if (milestoneQuery != '')
+                    queryFilterArray.push(milestoneQuery);
+                // for (var index = 0; index < milestonesToAdd.length; index++) {
+                //     var milestoneValue = milestonesToAdd[index];
+                //     milestoneQuery = _generateQueryForMilestones(milestoneValue, subQuery);
+                //     if (milestoneQuery != '')
+                //         queryFilterArray.push(milestoneQuery);
+                // }
                 // queryFilterArray = [
                 //     '(((Project = "/project/c645c001-1c1e-4cd1-9217-ee2dbe2ace3b") OR (Project = "/project/c645c001-1c1e-4cd1-9217-ee2dbe2ace3b")) OR (Project = "/project/c645c001-1c1e-4cd1-9217-ee2dbe2ace3b"))',
                 //     '(((((Project = "/project/897ee25d-1610-4efc-9651-0e8e9bd7f82c") OR (Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7")) OR (Project = "/project/c5577542-1677-44ea-acdc-555e9cb806fe")) OR (Project = "/project/7f99aaa6-d817-412c-acf7-d43076d0599b")) OR (Project = "/project/677aa9e3-d2ae-40ef-8a30-69abe2d3939b"))'
@@ -489,9 +696,20 @@ Ext.define("custom-grid-with-deep-export", {
                 params: {
                     types: typesForPortfolioItemType,
                     pagesize: pageSize,
+                    
                 }
            });
         }
+        // }
+        
+
+        // var myMask = new Ext.LoadMask(store.currentPanel, {msg:"Preparing queries..."});
+        // myMask.show();
+    
+        // Ext.defer(function() {
+            // _beforeLoadStoreFn();
+        //     myMask.hide();
+        // }, 1);
         return;
     },
 ////////////////////////////////////////////////////////////////////////////////////////////////////    
@@ -510,6 +728,8 @@ Ext.define("custom-grid-with-deep-export", {
         if (ancestorFilter) {
             filters.push(ancestorFilter);
         }
+        store.currentPanel = gridArea;
+        store.projectRef = Rally.util.Ref.getRelativeUri(this.getProjectRef());
         store.on('beforeload', this._beforeLoadStore);
         this.logger.log('_addGridboard', store);
 
@@ -536,10 +756,11 @@ Ext.define("custom-grid-with-deep-export", {
                 context: undefined,
                 quickFilterPanelConfig: {
                     initialFilters: [],
-                    addQuickFilterConfig:{whiteListFields:["Milestones", "Tags"]
-        }
+                    addQuickFilterConfig:{
+                        whiteListFields:["Milestones", "Tags"]
+                    }
                 },
-       advancedFilterPanelConfig: {
+                advancedFilterPanelConfig: {
                     advancedFilterRowsConfig: {
                         propertyFieldConfig: {
                              whiteListFields: ["Milestones", "Tags"]
@@ -565,7 +786,7 @@ Ext.define("custom-grid-with-deep-export", {
                 viewchange: this.viewChange,
             },
             plugins: [
-                'rallygridboardaddnew',               
+                'rallygridboardaddnew',
                 {
                     ptype: 'rallygridboardcustomfiltercontrol',
                     inlineFilterButtonConfig: {

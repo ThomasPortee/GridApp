@@ -21,7 +21,8 @@
             'Rally.ui.combobox.ComboBox',
             'Rally.ui.CheckboxField'
         ],
-        primaryMilestones: [],
+        primaryMilestones: undefined,
+        milestones: undefined,
         getFields: function() {
 
             var type_filters = Rally.data.wsapi.Filter.or([
