@@ -15,7 +15,7 @@ Ext.define('Rally.technicalservices.HierarchyExporter', {
         this.columns = config.columns || [{ dataIndex: 'FormattedID', text: 'ID' }, { dataIndex: 'Name', text: 'Name' }];
         this.portfolioItemTypeObjects = config.portfolioItemTypeObjects || [];
     },
-    setRecords: function(type, records) {
+    setRecords: function(records) {
         this.records = (this.records || []).concat(records);
     },
     export: function() {
@@ -29,11 +29,11 @@ Ext.define('Rally.technicalservices.HierarchyExporter', {
             hierarchicalData = this._buildHierarchy(),
             exportData = this._getExportableHierarchicalData(hierarchicalData, columns);
 
-        var ancestorType = this.modelName.toLowerCase();
-        if (hierarchicalData.length > 0) {
-            ancestorType = hierarchicalData[0]._type;
-        }
-        columns = this._getAncestorTypeColumns(ancestorType).concat(columns);
+        // var ancestorType = this.modelName.toLowerCase();
+        // if (hierarchicalData.length > 0) {
+        //     ancestorType = hierarchicalData[0]._type;
+        // }
+        // columns = this._getAncestorTypeColumns(ancestorType).concat(columns);
 
         var csv = this._transformDataToDelimitedString(exportData, columns);
 
@@ -98,7 +98,6 @@ Ext.define('Rally.technicalservices.HierarchyExporter', {
             column_headers = _.pluck(columns, 'text');
 
         csvArray.push(column_headers.join(delimiter));
-
         Ext.Array.each(data, function(obj) {
             var data = [];
             Ext.Array.each(column_keys, function(key) {
@@ -107,6 +106,7 @@ Ext.define('Rally.technicalservices.HierarchyExporter', {
                 if (key === "Parent") {
                     val = obj[key] || obj['PortfolioItem'];
                 }
+                
 
                 if (val) {
                     if (reHTML.test(val)) {
@@ -211,7 +211,7 @@ Ext.define('Rally.technicalservices.HierarchyExporter', {
         rec[type] = recData.FormattedID;
         rec.type = this.getTypePathDisplayName(recData._type);
         rec._type = recData._type;
-
+        
         _.each(columns, function(c) {
             var field = c.dataIndex || null;
             if (field) {

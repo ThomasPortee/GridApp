@@ -107,5 +107,10 @@ Ext.define('Rally.ui.gridboard.plugin.GridBoardCustomFilterControl', {
 
         Ext.apply(state, _.pick(inlineFilterButton.getState(), 'collapsed', 'advancedCollapsed'));
         Ext.state.Manager.set(stateId, state);
+    },
+
+    getCurrentFilters: function(){
+        var inlineFilterButton = this.getControlCmp().getComponent('customFilterButton');
+        return inlineFilterButton.getTypesAndFilters()['filters'];
     }
 });

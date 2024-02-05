@@ -803,17 +803,14 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                                 height: '175px',
                                 flex: 1,
                                 items: [
-                                    
-                                {
+                                    {
                                         xtype: 'container',
                                         flex: 1,
                                         layout: 'hbox',
                                         items: [
                                             cboArtifact,
-                                            
                                         ]
-                            
-                                    },                                    
+                                    },
                                     {
                                         xtype: 'container',
                                         flex: 1,

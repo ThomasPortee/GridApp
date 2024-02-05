@@ -143,11 +143,17 @@ Ext.define("custom-grid-with-deep-export", {
         }
         var _fetchMilestonesByFormattedID = function(milestones, startIndex, pageSize, filters){
             var query = filters == undefined ? '' : filters.toString();
-            var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone?&start=" + startIndex + "&project=" + projectRef +  "&pagesize=" + pageSize + "&fetch=FormattedID&query="+ query
+            var url = "https://rally1.rallydev.com/slm/webservice/v2.0/milestone"
             var response = Ext.Ajax.request({
                 async: false,
                 url: url,
-                method: "GET",
+                params:{
+                    start: startIndex,
+                    project: projectRef,
+                    pagesize: pageSize,
+                    fetch: 'FormattedID',
+                    query: query,
+                }
             });
             if (response.status == 200){
                 var responseTextObj = Ext.JSON.decode(response.responseText);
@@ -379,9 +385,9 @@ Ext.define("custom-grid-with-deep-export", {
         var _loadProjectsByMilestone =  function(milestone, subQuery){
             var artifacts = milestone.Artifacts;
             if (subQuery != undefined)
-                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + "&project=" + projectRef + '&fetch=Project&query='+ encodeURI(subQuery);
+                var urlForArtifacts = artifacts._ref + "?start=1&types=portfolioitem/epic,portfolioitem/feature&pagesize=" + artifacts.Count + "&project=" + projectRef + '&fetch=Project, State&query='+ encodeURI(subQuery);
             else 
-                var urlForArtifacts = artifacts._ref + "?start=1&pagesize=" + artifacts.Count + "&project=" + projectRef + '&fetch=Project'
+                var urlForArtifacts = artifacts._ref + "?start=1&types=portfolioitem/epic,portfolioitem/feature&pagesize=" + artifacts.Count + "&project=" + projectRef + '&fetch=Project, State'
             var response = Ext.Ajax.request({
                 async: false,
                 url: urlForArtifacts,
@@ -393,12 +399,13 @@ Ext.define("custom-grid-with-deep-export", {
                 var queryForMilestone = "";
                 for (var index = 0; index < responseProjects.length; index++) {
                     //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
-                    const projectUUID = responseProjects[index].Project._refObjectUUID;
+                    var projectUUID = responseProjects[index].Project._refObjectUUID;
+                    var stateUUID = responseProjects[index].State._refObjectUUID;
                     if (index == 0)
                     {
-                        queryForMilestone = '(Project = "/project/'+projectUUID+'")';
+                        queryForMilestone = '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '"))';
                     }else{
-                        queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'"))';
+                        queryForMilestone = '('+ queryForMilestone + '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '")))';
                     }
                     
                     if (index < responseProjects.length -1){
@@ -449,7 +456,7 @@ Ext.define("custom-grid-with-deep-export", {
                     project: projectRef,
                     types: portfolioItemTypesQuery_alt,
                     start: 1,
-                    fetch: 'Project'
+                    fetch: 'Project, State'
                 }
             });
             if (response.status == 200){
@@ -458,12 +465,13 @@ Ext.define("custom-grid-with-deep-export", {
                 var queryForMilestone = "";
                 for (var index = 0; index < responseProjects.length; index++) {
                     //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
-                    const projectUUID = responseProjects[index].Project._refObjectUUID;
+                    var projectUUID = responseProjects[index].Project._refObjectUUID;
+                    var stateUUID = responseProjects[index].State._refObjectUUID;
                     if (index == 0)
                     {
-                        queryForMilestone = '(Project = "/project/'+projectUUID+'")';
+                        queryForMilestone = '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '"))';
                     }else{
-                        queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'"))';
+                        queryForMilestone = '('+ queryForMilestone + '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '")))';
                     }
                     
                     if (index < responseProjects.length -1){
@@ -520,10 +528,16 @@ Ext.define("custom-grid-with-deep-export", {
             }
             return subQuery;
         }
-        // var _beforeLoadStoreFn = function(){
         var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
-        var pageSize = Ext.clone(store.lastOptions.params.pagesize);
-        
+        var pageSize = undefined;
+        if (store.lastOptions.params != undefined && store.lastOptions.params.pagesize != undefined)
+            pageSize = Ext.clone(store.lastOptions.params.pagesize);
+        var startIndex = undefined;
+        if (store.lastOptions.params != undefined && store.lastOptions.params.start != undefined)
+            startIndex = store.lastOptions.params.start;
+        var portfolioTypes = undefined;
+        if (store.lastOptions.params != undefined && store.lastOptions.params.types != undefined)
+            portfolioTypes = store.lastOptions.params.types;
         if (operation.filters.length>0)
         {
             var filtersCollection = _buildFiltersCollection(operation.filters[0], []);
@@ -671,32 +685,31 @@ Ext.define("custom-grid-with-deep-export", {
                 }
                 //milestonesToAdd
             }
-            var startIndex = store.lastOptions.params.start;
-            if (queryFilters != undefined && queryFilters != ""){
-                var composedQuery =  queryFilters;
-                Ext.apply(operation, {
-                    params: {
-                        query:composedQuery,
-                        pagesize: pageSize,
-                        start: startIndex,
-                        types: typesForPortfolioItemType
-                    }
-               });
-            }else{
-                Ext.apply(operation, {
-                    params: {
-                        pagesize: pageSize,
-                        start: startIndex,
-                        types: typesForPortfolioItemType
-                    }
-               });
+
+            if (queryFilters != undefined && queryFilters != "") {
+              var composedQuery = queryFilters;
+              Ext.apply(operation, {
+                params: {
+                  query:composedQuery,
+                  pagesize: pageSize,
+                  start: startIndex,
+                  types: typesForPortfolioItemType,
+                },
+              });
+            } else {
+              Ext.apply(operation, {
+                params: {
+                  pagesize: pageSize,
+                  start: startIndex,
+                  types: typesForPortfolioItemType,
+                },
+              });
             }
         } else {
             Ext.apply(operation, {
                 params: {
                     types: typesForPortfolioItemType,
                     pagesize: pageSize,
-                    
                 }
            });
         }
@@ -710,6 +723,7 @@ Ext.define("custom-grid-with-deep-export", {
             // _beforeLoadStoreFn();
         //     myMask.hide();
         // }, 1);
+        
         return;
     },
 ////////////////////////////////////////////////////////////////////////////////////////////////////    
@@ -789,6 +803,7 @@ Ext.define("custom-grid-with-deep-export", {
                 'rallygridboardaddnew',
                 {
                     ptype: 'rallygridboardcustomfiltercontrol',
+                    pluginId: 'rallygridboardcustomfiltercontrol',
                     inlineFilterButtonConfig: {
                         stateful: true,
                         stateId: this.getModelScopedStateId(currentModelName, 'customfilters'),
@@ -870,26 +885,27 @@ Ext.define("custom-grid-with-deep-export", {
         var result = [];
         this.logger.log('_getExportMenuItems', this.modelNames[0]);
         var currentModel = this.modelNames[0].toLowerCase();
-        if (currentModel === 'hierarchicalrequirement') {
-            result = [{
-                text: 'Export User Stories...',
-                handler: this._export,
-                scope: this,
-                childModels: ['hierarchicalrequirement']
-            }, /* {
-                text: 'Export User Stories and Tasks...',
-                handler: this._export,
-                scope: this,
-                childModels: ['hierarchicalrequirement', 'task']
-            }, */ {
-                text: 'Export User Stories and Defects...',  //  Child Items
-                handler: this._export,
-                scope: this,
-                childModels: ['hierarchicalrequirement', 'defect'] // , 'task', 'testcase'    removing tasks, test cases
-            }];
-        }
-        else if (Ext.String.startsWith(currentModel,"portfolioitem")) {
+        // if (currentModel === 'hierarchicalrequirement') {
+        //     result = [{
+        //         text: 'Export User Stories...',
+        //         handler: this._export,
+        //         scope: this,
+        //         childModels: ['hierarchicalrequirement']
+        //     }, /* {
+        //         text: 'Export User Stories and Tasks...',
+        //         handler: this._export,
+        //         scope: this,
+        //         childModels: ['hierarchicalrequirement', 'task']
+        //     }, */ {
+        //         text: 'Export User Stories and Defects...',  //  Child Items
+        //         handler: this._export,
+        //         scope: this,
+        //         childModels: ['hierarchicalrequirement', 'defect'] // , 'task', 'testcase'    removing tasks, test cases
+        //     }];
+        // }
+        if (Ext.String.startsWith(currentModel,"portfolioitem")) {
             var piTypeNames = this.getPortfolioItemTypeNames();
+            console.log(piTypeNames, currentModel);
             var idx = _.indexOf(piTypeNames, currentModel);
             var childModels = [];
             if (idx > 0) {
@@ -897,10 +913,9 @@ Ext.define("custom-grid-with-deep-export", {
                     childModels.push(piTypeNames[i - 1]);
                 }
             }
-
             result = [{
                 text: 'Export Portfolio Items...',
-                handler: this._export,
+                handler: this._export_alt,
                 scope: this,
                 childModels: childModels
             },/* {
@@ -920,19 +935,19 @@ Ext.define("custom-grid-with-deep-export", {
                 childModels: childModels.concat(['hierarchicalrequirement', 'defect']) //  , 'task', 'testcase'
             }*/];
         }
-        else if (currentModel == 'defect') {
-            result = [{
-                text: 'Export Defects...',
-                handler: this._export,
-                scope: this,
-                childModels: []
-            }, {
-                text: 'Export Defects and Child Items...',
-                handler: this._export,
-                scope: this,
-                childModels: ['defect']  //  , 'task', 'testcase'
-            }];
-        }
+        // else if (currentModel == 'defect') {
+        //     result = [{
+        //         text: 'Export Defects...',
+        //         handler: this._export,
+        //         scope: this,
+        //         childModels: []
+        //     }, {
+        //         text: 'Export Defects and Child Items...',
+        //         handler: this._export,
+        //         scope: this,
+        //         childModels: ['defect']  //  , 'task', 'testcase'
+        //     }];
+        // }
   /*      else if (currentModel == 'testcase') {
             result = [{
                 text: 'Export Test Cases...',
@@ -1030,23 +1045,83 @@ Ext.define("custom-grid-with-deep-export", {
     _getExportSorters: function() {
         return this.down('rallygridboard').getGridOrBoard().getStore().getSorters();
     },
+    _export_alt: function(){
+        this.modelNames = [this.getSetting('type')];
+        this.logger.log('_buildStore', this.modelNames);
+        var fetch = ['FormattedID', 'Name','Project', 'State', 'Milestones', 'PlannedStartDate', 'PlannedEndDate'];
+        var dataContext = this.getContext().getDataContext();
+        if (this.searchAllProjects()) {
+            dataContext.project = null;
+        }
+        var gridboard = this.down('rallygridboard'),
+        filterPlugin = gridboard.getPlugin('rallygridboardcustomfiltercontrol'),
+        filters = filterPlugin.getCurrentFilters();
+        var sorters = this._getExportSorters();
+        console.log(filters.toString());
+        Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
+            models: this.modelNames,
+            enableHierarchy: true,
+            enableRootLevelPostGet: true,
+            remoteSort: true,
+            pageSize: 2000,
+            filters: filters,
+            sorters: sorters,
+            fetch: fetch,
+            context: dataContext
+        }).then({
+            success: this._export_store_loaded,
+            scope: this
+        });
+    },
+    _export_store_loaded: function(store){
+        
+        var currentModelName = this.modelNames[0];
+        var filters = this.getSetting('query') ? [Rally.data.wsapi.Filter.fromQueryString(this.getSetting('query'))] : [];
+        var timeboxScope = this.getContext().getTimeboxScope();
+        if (timeboxScope && timeboxScope.isApplicable(store.model)) {
+            filters.push(timeboxScope.getQueryFilter());
+        }
+        var ancestorFilter = this.ancestorFilterPlugin.getFilterForType(currentModelName);
+        if (ancestorFilter) {
+            filters.push(ancestorFilter);
+        }
+        var columns = this._getExportColumns();
+        
+        store.exportColumns = columns;
+        console.log(columns);
+        store.projectRef = Rally.util.Ref.getRelativeUri(this.getProjectRef());
+        console.log('store.filters', store.filters);
+        store.on('beforeload', this._beforeLoadStore);
+        store.on('load', this._exportToCSV);
+        store.load();
+    },
+    _exportToCSV: function(me, node, records, successful, eOpts){
+        var exporter = Ext.create('Rally.technicalservices.HierarchyExporter', {            
+            fileName: 'hierarchy-export.csv',
+            columns: me.exportColumns
+        });
+        exporter.setRecords(records);
+        exporter.export();
+    },
     _export: function(args) {
-        var columns = this._getExportColumns(),
+        
             fetch = this._getExportFetch(),
-            filters = this._getExportFilters(),
             modelName = this.modelNames[0],
             childModels = args.childModels,
-            sorters = this._getExportSorters();
-
+            sorters = this._getExportSorters(),
+            gridboard = this.down('rallygridboard'),
+            filterPlugin = gridboard.getPlugin('rallygridboardcustomfiltercontrol'),
+            filters = filterPlugin.getCurrentFilters();
+        
+        
         this.logger.log('_export', fetch, args, columns, filters.toString(), childModels, sorters);
-
         var exporter = Ext.create('Rally.technicalservices.HierarchyExporter', {
             modelName: modelName,
             fileName: 'hierarchy-export.csv',
             columns: columns,
             portfolioItemTypeObjects: this.portfolioItemTypes
-
         });
+        
         exporter.on('exportupdate', this._showStatus, this);
         exporter.on('exporterror', this._showError, this);
         exporter.on('exportcomplete', this._showStatus, this);
@@ -1063,7 +1138,9 @@ Ext.define("custom-grid-with-deep-export", {
             sorters: sorters,
             loadChildModels: childModels,
             portfolioItemTypes: this.portfolioItemTypes,
-            context: dataContext
+            context: dataContext,
+            fnBeforeLoadStore: this._beforeLoadStore,
+            projectRef: Rally.util.Ref.getRelativeUri(this.getProjectRef())
         });
         hierarchyLoader.on('statusupdate', this._showStatus, this);
         hierarchyLoader.on('hierarchyloadartifactsloaded', exporter.setRecords, exporter);

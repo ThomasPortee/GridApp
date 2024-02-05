@@ -265,7 +265,15 @@ module.exports = function(grunt) {
                 if ( response.statusCode != 200 ) {
                     grunt.log.writeln('oops');
                 }
-                grunt.log.writeln('--Deployed--');
+                var d = new Date();
+                var dformat = [d.getMonth()+1,
+                        d.getDate(),
+                        d.getFullYear()].join('/')+' '+
+                        [d.getHours(),
+                        d.getMinutes(),
+                        d.getSeconds()].join(':');
+
+                grunt.log.writeln('['+ dformat + '] Deployed');
             });
         };
 
