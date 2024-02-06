@@ -400,12 +400,11 @@ Ext.define("custom-grid-with-deep-export", {
                 for (var index = 0; index < responseProjects.length; index++) {
                     //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
                     var projectUUID = responseProjects[index].Project._refObjectUUID;
-                    var stateUUID = responseProjects[index].State._refObjectUUID;
                     if (index == 0)
                     {
-                        queryForMilestone = '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '"))';
+                        queryForMilestone = '(Project = "/project/'+projectUUID+'") ';
                     }else{
-                        queryForMilestone = '('+ queryForMilestone + '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '")))';
+                        queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'") )';
                     }
                     
                     if (index < responseProjects.length -1){
@@ -454,9 +453,9 @@ Ext.define("custom-grid-with-deep-export", {
                     query: query,
                     pagesize: 2000,
                     project: projectRef,
-                    types: portfolioItemTypesQuery_alt,
+                    types: 'portfolioitem/epic, portfolioitem/feature',
                     start: 1,
-                    fetch: 'Project, State'
+                    fetch: 'Project'
                 }
             });
             if (response.status == 200){
@@ -466,12 +465,11 @@ Ext.define("custom-grid-with-deep-export", {
                 for (var index = 0; index < responseProjects.length; index++) {
                     //// Project = "/project/1cfd4cf4-5bf7-476c-8c3d-f6a6b906a3b7"
                     var projectUUID = responseProjects[index].Project._refObjectUUID;
-                    var stateUUID = responseProjects[index].State._refObjectUUID;
                     if (index == 0)
                     {
-                        queryForMilestone = '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '"))';
+                        queryForMilestone = '(Project = "/project/'+projectUUID+'") ';
                     }else{
-                        queryForMilestone = '('+ queryForMilestone + '((Project = "/project/'+projectUUID+'") AND (state = "/state/' + stateUUID + '")))';
+                        queryForMilestone = '('+ queryForMilestone + '(Project = "/project/'+projectUUID+'"))';
                     }
                     
                     if (index < responseProjects.length -1){
