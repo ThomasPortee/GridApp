@@ -48,7 +48,7 @@ Ext.override(Rally.ui.grid.TreeGrid, {
                     result = columnCfg;
                 }
             }
-
+            console.log('_mergeColumnConfigs', result);
             return result;
         }, this);
     },

@@ -263,7 +263,7 @@ module.exports = function(grunt) {
 
             request.post(options, function(error,response,body){
                 if ( response.statusCode != 200 ) {
-                    grunt.log.writeln('oops');
+                    grunt.log.writeln('oops2');
                 }
                 var d = new Date();
                 var dformat = [d.getMonth()+1,
@@ -303,7 +303,7 @@ module.exports = function(grunt) {
 
             request.post(options, function(error,response,body){
                 if ( response.statusCode != 200 ) {
-                    grunt.log.writeln('oops');
+                    grunt.log.writeln('oops1');
                 }
 
                 var response_object = JSON.parse(body);
@@ -320,48 +320,88 @@ module.exports = function(grunt) {
         };
 
         var makePage = function(key) {
-            var uri = config.auth.server + "/slm/wt/edit/create.sp";
+            var uri = config.auth.server + "/slm/webservice/v2.x/webtab/create";
             var parameters = {
+                key: key,
                 cpoid:729766,
-                key: key
             };
 
             var payload = {
-                name: "*" + pkg.name,
-                editorMode: 'create',
-                pid: 'myhome',
-                oid: 6440917,
-                timeboxFilter:'none'
-            };
+                webtab: {
+                    // name: "*" + config.name,
+                    name: pkg.name,
+                    portholeId: 'myhome',
+                    shared: false
+            }};
 
-            grunt.log.writeln('Creating page:', payload.name);
+            grunt.log.writeln('Creating page:', payload.webtab.name);
 
             var options = {
                 uri: uri,
-                form: payload,
+                json: payload,
                 qs: parameters,
                 jar: j
             };
 
             request.post(options, function(error,response,body){
-                //grunt.log.writeln('responseCode:', response.statusCode);
                 if ( response.statusCode != 200 ) {
-                    grunt.log.writeln('oops');
-                    //grunt.log.writeln('--', response.headers);
-                    //grunt.log.writeln('--', response.request.headers);
-                    //grunt.log.writeln('--', response.request.body);
+                    grunt.log.writeln('oops, something went wrong');
                 }
-                //grunt.log.writeln('response:', response);
-                //grunt.log.writeln('response body', body);
-                // looking for
-                // <input type="hidden" name="oid" value="52337144851"/>
-                var page_oid = body.replace(/(.|[\r\n])*name="oid"/,"").replace(/"\/\>(.|[\r\n])*/,"").replace(/.*"/,"");
-
-                grunt.log.writeln('Created', payload.name, " at oid:", page_oid);
-
-                makeApp(key,page_oid)
+               var page_oid = body && body.CreateResult && body.CreateResult.Object && body.CreateResult.Object.ObjectID; 
+               if (page_oid) {
+                    grunt.log.writeln('Created', payload.webtab.name, " at oid:", page_oid);
+                    makeApp(key,page_oid)
+               } else {
+                    grunt.log.writeln('Create Page failed: ', JSON.stringify(body));
+               }
             });
         };
+
+        // var makePage = function(key) {
+        //     var uri = config.auth.server + "/slm/wt/edit/create.sp";
+        //     var parameters = {
+        //         cpoid:729766,
+        //         key: key
+        //     };
+
+        //     var payload = {
+        //         name: "*" + pkg.name,
+        //         editorMode: 'create',
+        //         pid: 'myhome',
+        //         oid: 6440917,
+        //         timeboxFilter:'none'
+        //     };
+
+        //     grunt.log.writeln('Creating page:', payload.name);
+
+        //     var options = {
+        //         uri: uri,
+        //         form: payload,
+        //         qs: parameters,
+        //         jar: j
+        //     };
+        //     grunt.log.writeln('Creating Page URI:', uri);
+        //     request.post(options, function(error,response,body){
+        //         //grunt.log.writeln('responseCode:', response.statusCode);
+        //         if ( response.statusCode != 200 ) {
+        //             grunt.log.writeln('oops3');
+        //             grunt.log.writeln(response.statusCode);
+        //             grunt.log.writeln(body);
+        //             //grunt.log.writeln('--', response.headers);
+        //             //grunt.log.writeln('--', response.request.headers);
+        //             //grunt.log.writeln('--', response.request.body);
+        //         }
+        //         //grunt.log.writeln('response:', response);
+        //         //grunt.log.writeln('response body', body);
+        //         // looking for
+        //         // <input type="hidden" name="oid" value="52337144851"/>
+        //         var page_oid = body.replace(/(.|[\r\n])*name="oid"/,"").replace(/"\/\>(.|[\r\n])*/,"").replace(/.*"/,"");
+
+        //         grunt.log.writeln('Created', payload.name, " at oid:", page_oid);
+
+        //         makeApp(key,page_oid)
+        //     });
+        // };
 
         var uri = config.auth.server + "/slm/webservice/v2.0/security/authorize";
 

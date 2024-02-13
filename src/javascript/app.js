@@ -528,6 +528,7 @@ Ext.define("custom-grid-with-deep-export", {
         }
         var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
         var pageSize = undefined;
+        var isPrimaryMilestone = false;
         if (store.lastOptions.params != undefined && store.lastOptions.params.pagesize != undefined)
             pageSize = Ext.clone(store.lastOptions.params.pagesize);
         var startIndex = undefined;
@@ -570,10 +571,12 @@ Ext.define("custom-grid-with-deep-export", {
                             if (filter.value == false){
                                 continue;
                             }else{
+                                isPrimaryMilestone = true;
                             }
                             continue;
                         }
                         if (filter.property == 'PrimaryMilestone'){
+                            isPrimaryMilestone = true;
                             if (treeMilestones == undefined)
                                 treeMilestones = _buildMilestoneTree();
                             var formattedID = getFormattedIDByRef(filter.value);
@@ -683,7 +686,7 @@ Ext.define("custom-grid-with-deep-export", {
                 }
                 //milestonesToAdd
             }
-
+            console.log(isPrimaryMilestone ? true:false);
             if (queryFilters != undefined && queryFilters != "") {
               var composedQuery = queryFilters;
               Ext.apply(operation, {
@@ -692,6 +695,7 @@ Ext.define("custom-grid-with-deep-export", {
                   pagesize: pageSize,
                   start: startIndex,
                   types: typesForPortfolioItemType,
+                  projectScopeDown: isPrimaryMilestone ? true:false
                 },
               });
             } else {
@@ -700,6 +704,7 @@ Ext.define("custom-grid-with-deep-export", {
                   pagesize: pageSize,
                   start: startIndex,
                   types: typesForPortfolioItemType,
+                  projectScopeDown: isPrimaryMilestone ? true:false
                 },
               });
             }
@@ -708,20 +713,16 @@ Ext.define("custom-grid-with-deep-export", {
                 params: {
                     types: typesForPortfolioItemType,
                     pagesize: pageSize,
+                    projectScopeDown: isPrimaryMilestone ? true:false
                 }
            });
         }
-        // }
-        
-
-        // var myMask = new Ext.LoadMask(store.currentPanel, {msg:"Preparing queries..."});
-        // myMask.show();
-    
-        // Ext.defer(function() {
-            // _beforeLoadStoreFn();
-        //     myMask.hide();
-        // }, 1);
-        
+        Ext.apply(operation, {
+            context: {
+                projectScopeDown: isPrimaryMilestone ? true:false
+            }
+       });
+        console.log(operation);
         return;
     },
 ////////////////////////////////////////////////////////////////////////////////////////////////////    
@@ -1058,7 +1059,7 @@ Ext.define("custom-grid-with-deep-export", {
         console.log(filters.toString());
         Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
             models: this.modelNames,
-            enableHierarchy: true,
+            enableHierarchy: false,
             enableRootLevelPostGet: true,
             remoteSort: true,
             pageSize: 2000,

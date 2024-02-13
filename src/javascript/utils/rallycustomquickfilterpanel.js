@@ -856,8 +856,8 @@ Ext.define('Rally.ui.inlinefilter.CustomQuickFilterPanel', {
                     {
                         xtype: 'container',
                         padding: '20 50',
-                        columnWidth: 1,
-                        html : 'Test description. This section will serve as an area to input the App description and working scope. This area will be updated once details have been confirmed. <br/><br/>&nbsp; - &nbsp; Test Bullet <br/>&nbsp; - &nbsp; Test Bullet '
+                        width: 790,
+                        html : '<strong>Milestone Team Insight:</strong> Select a milestone, portfolio item type and state(s). The app identifies teams that have work in those states on that milestone then shows all work of the selected type and state(s) for those teams.  <br/><br/>&nbsp; -&nbsp;Choose a Portfolio Item Type to populate state value(s). <br/>&nbsp; -&nbsp;Choosing a state filters grid items and refines milestone work scope. <br/>&nbsp; -&nbsp;Milestone must be selected for app to execute successfully.' 
                     }
                 ]
             }
