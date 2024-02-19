@@ -160,6 +160,27 @@ Ext.override(Rally.ui.gridboard.GridBoard, {
     getInlineFilterPanel: function() {
         return this.down('#customFilterPanel');
     },
+    
+});
+
+Ext.override(Rally.data.wsapi.TreeStore, {
+    filter: function(filters) {
+        if (filters.length == 0){
+            filters = [
+                Ext.create('Rally.data.wsapi.Filter', {
+                property: 'FormattedID',
+                operator: '=',
+                value: 0
+                })
+            ];
+        }
+
+        this.fireEvent('beforefilter', this);
+        this.filters.addAll(filters);
+        this._resetCurrentPage();
+        this.load();
+    },
+    
 });
 
 Rally.ui.tree.PagingToolbar.prototype._onSubsequentLoads= function(store, node, records, successful, options) {
@@ -211,3 +232,5 @@ Ext.form.field.ComboBox.prototype.doQuery= function(queryString, forceAll, rawQu
 
     return true;
 }
+
+

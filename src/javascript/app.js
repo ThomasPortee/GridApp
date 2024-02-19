@@ -111,6 +111,7 @@ Ext.define("custom-grid-with-deep-export", {
             enableRootLevelPostGet: true,
             remoteSort: true,
             fetch: fetch,
+            autoLoad: false,
             context: dataContext
         }).then({
             success: this._addGridboard,
@@ -526,7 +527,8 @@ Ext.define("custom-grid-with-deep-export", {
             }
             return subQuery;
         }
-        var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
+        // var typesForPortfolioItemType = 'portfolioitem/epic, portfolioitem/feature';
+        var typesForPortfolioItemType = 'portfolioitem/epic';
         var pageSize = undefined;
         var isPrimaryMilestone = false;
         if (store.lastOptions.params != undefined && store.lastOptions.params.pagesize != undefined)
@@ -545,7 +547,8 @@ Ext.define("custom-grid-with-deep-export", {
             var milestoneQuery = undefined;
             var stateQuery = undefined;
             var portfolioItemTypeQuery = undefined;
-            var portfolioItemTypesQuery_alt = 'portfolioitem/epic, portfolioitem/feature';
+            // var portfolioItemTypesQuery_alt = 'portfolioitem/epic, portfolioitem/feature';
+            var portfolioItemTypesQuery_alt = 'portfolioitem/epic';
             var milestonesToAdd = undefined;
             
             for (var index = 0; index < filtersCollection.length; index++) {
@@ -596,7 +599,8 @@ Ext.define("custom-grid-with-deep-export", {
                             } else if (filter.value == 'Feature'){
                                 portfolioItemTypesQuery_alt = 'portfolioitem/feature';
                             } else if (filter.value == undefined){
-                                portfolioItemTypesQuery_alt = 'portfolioitem/epic,portfolioitem/feature'
+                                // portfolioItemTypesQuery_alt = 'portfolioitem/epic,portfolioitem/feature'
+                                portfolioItemTypesQuery_alt = 'portfolioitem/epic'
                             }
                         }
                         if (filter.value == 'Epic')
@@ -722,7 +726,7 @@ Ext.define("custom-grid-with-deep-export", {
                 projectScopeDown: isPrimaryMilestone ? true:false
             }
        });
-        console.log(operation);
+        console.log(operation, store);
         return;
     },
 ////////////////////////////////////////////////////////////////////////////////////////////////////    
@@ -733,6 +737,7 @@ Ext.define("custom-grid-with-deep-export", {
         var currentModelName = this.modelNames[0];
 
         var filters = this.getSetting('query') ? [Rally.data.wsapi.Filter.fromQueryString(this.getSetting('query'))] : [];
+        
         var timeboxScope = this.getContext().getTimeboxScope();
         if (timeboxScope && timeboxScope.isApplicable(store.model)) {
             filters.push(timeboxScope.getQueryFilter());
@@ -752,40 +757,6 @@ Ext.define("custom-grid-with-deep-export", {
             dataContext.project = null;
         }
         var summaryRowFeature = Ext.create('Rally.ui.grid.feature.SummaryRow');
-        
-        Ext.override(Rally.ui.inlinefilter.InlineFilterPanel, {
-            minHeight: 46,
-            padding: '8px 0 0 0',
-            bodyPadding: '7px 5px 5px 5px',
-            collapseDirection: 'top',
-            collapsible: true,
-            animCollapse: false,
-    
-            config: {
-                inline: true,
-                collapsed: true,
-                anchorTargetCmp: undefined,
-                model: undefined,
-                context: undefined,
-                quickFilterPanelConfig: {
-                    initialFilters: [],
-                    addQuickFilterConfig:{
-                        whiteListFields:["Milestones", "Tags"]
-                    }
-                },
-                advancedFilterPanelConfig: {
-                    advancedFilterRowsConfig: {
-                        propertyFieldConfig: {
-                             whiteListFields: ["Milestones", "Tags"]
-                        }
-                     },
-                    matchTypeConfig: {
-                        value: 'AND'
-                    }
-                }
-            },
-        }
-        );
         
         this.gridboard = gridArea.add({
             xtype: 'rallygridboard',
@@ -838,9 +809,13 @@ Ext.define("custom-grid-with-deep-export", {
             },
             gridConfig: {
                 store: store,
+                autoLoad: false,
+                noDataPrimaryText : 'Hello!',
+                noDataSecondaryText : 'Please select filters above to populate the Grid.',
                 storeConfig: {
                     filters: filters,
-                    context: dataContext
+                    context: dataContext,
+                    autoLoad: false
                 },
                 columnCfgs: [
                     'Name',
